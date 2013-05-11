@@ -51,9 +51,10 @@ for repo in conf['repos']:
     if not os.path.exists(versioned_dir):
         os.makedirs(versioned_dir)
 
-    for file in os.listdir(repo_dir):
-        symlink = '%s/%s' % (versioned_dir, file)
-        link_to = '../packages/%s' % file
+    for pkg in packages:
+        pkg_name_full = '%s-%s-%s.%s' % (pkg.name, pkg.version, pkg.release, pkg.arch)
+        symlink = '%s/%s' % (versioned_dir, pkg_name_full)
+        link_to = '../packages/%s' % pkg_name_full
         if not os.path.exists(symlink):
             os.symlink(link_to, symlink)
 
