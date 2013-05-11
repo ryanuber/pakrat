@@ -1,4 +1,6 @@
+import os
 import yum
+from datetime import datetime
 
 conf = {
     'mirror_dir': '/root/mirrors',
@@ -37,3 +39,13 @@ for repo in conf['repos']:
 
 packages = yb.doPackageLists(pkgnarrow='available', showdups=False)
 yb.downloadPkgs(packages)
+
+now = datetime.now()
+repo_version = '%s-%s-%s' % (now.month, now.day, now.year)
+
+for repo in conf['repos']:
+    repo_dir = '%s/%s/packages' % (conf['mirror_dir'], repo['name'])
+    versioned_dir = '%s/%s/%s' % (conf['mirror_dir'], repo['name'], repo_version)
+    os.makedirs(versioned_dir)
+    for file in os.listdir(repo_dir):
+        os.symlink('../packages/%s' % file, '%s/%s' % (versioned_dir, file))
