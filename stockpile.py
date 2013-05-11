@@ -23,16 +23,18 @@ conf = {
     ]
 }
 
-now = datetime.now()
-repo_version = '%s-%s-%s' % (now.month, now.day, now.year)
-
 for repo in conf['repos']:
     yb = yum.YumBase()
     yb.repos.disableRepo('*')
     yb.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
 
-    repo_dir = '%s/%s/packages' % (conf['mirror_dir'], repo['name'])
-    versioned_dir = '%s/%s/%s' % (conf['mirror_dir'], repo['name'], repo_version)
+    now = datetime.now()
+    repo_version = '%s-%s-%s' % (now.month, now.day, now.year)
+
+    base_dir = '%s/%s' % (conf['mirror_dir'], repo['name'])
+    repo_dir = '%s/packages' % base_dir
+    versioned_dir = '%s/%s' % (repo_dir, repo_version)
+    latest_symlink = '%s/latest' % base_dir
 
     if 'mirrorlist' in repo.keys():
         yr = yb.add_enable_repo(repo['name'], mirrorlist=repo['mirrorlist'])
@@ -54,3 +56,8 @@ for repo in conf['repos']:
         link_to = '../packages/%s' % file
         if not os.path.exists(symlink):
             os.symlink(link_to, symlink)
+
+    if os.path.exists(latest_symlink) and os.readlink(latest_symlink) is not repo_version:
+        os.unlink(latest_symlink)
+
+    os.symlink(repo_version, latest_symlink)
