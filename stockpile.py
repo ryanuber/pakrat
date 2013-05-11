@@ -33,7 +33,7 @@ for repo in conf['repos']:
 
     base_dir = '%s/%s' % (conf['mirror_dir'], repo['name'])
     repo_dir = '%s/packages' % base_dir
-    versioned_dir = '%s/%s' % (repo_dir, repo_version)
+    versioned_dir = '%s/%s' % (base_dir, repo_version)
     latest_symlink = '%s/latest' % base_dir
 
     if 'mirrorlist' in repo.keys():
@@ -52,9 +52,9 @@ for repo in conf['repos']:
         os.makedirs(versioned_dir)
 
     for pkg in packages:
-        pkg_name_full = '%s-%s-%s.%s' % (pkg.name, pkg.version, pkg.release, pkg.arch)
-        symlink = '%s/%s' % (versioned_dir, pkg_name_full)
-        link_to = '../packages/%s' % pkg_name_full
+        pkg_file = '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
+        symlink = '%s/%s' % (versioned_dir, pkg_file)
+        link_to = '../packages/%s' % pkg_file
         if not os.path.exists(symlink):
             os.symlink(link_to, symlink)
 
