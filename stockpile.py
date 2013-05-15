@@ -2,7 +2,7 @@ import os
 import yum
 from datetime import datetime
 
-class Stockpile(object):
+class Stockpile:
 
     @staticmethod
     def get_yum():
