@@ -45,6 +45,24 @@ class Stockpile(object):
         return '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
 
     @staticmethod
+    def make_dir(dir):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+    @staticmethod
+    def symlink(path, target):
+        if not os.path.islink(path):
+            if os.path.isfile(path):
+                raise StockpileException('%s is a file - Cannot create symlink' % path)
+            dir = os.path.basename(path)
+            if not os.path.exists(dir):
+                Stockpile.make_dir(dir)
+        elif os.readlink(path) != target:
+            os.unlink(path)
+        if not os.path.exists(path):
+            os.symlink(target, path)
+
+    @staticmethod
     def repo(name, arch=None, baseurls=None, mirrorlist=None):
         yb = Stockpile.get_yum()
         if baseurls is not None:
@@ -60,6 +78,13 @@ class Stockpile(object):
                 raise StockpileException('Arch must be passed as a list')
             yb.doSackSetup(thisrepo=name, archlist=arch)
 
+        return repo
+
+    @staticmethod
+    def set_repo_path(repo, path):
+        if type(repo) is not yum.yumRepo.YumRepository:
+            raise StockpileException('Repo must be a yum.yumRepo.YumRepository instance')
+        repo._dirSetAttr('pkgdir', path)
         return repo
 
     @staticmethod
@@ -80,26 +105,21 @@ class Stockpile(object):
             versioned_dir = Stockpile.get_versioned_dir(repo_dir, repo_version)
             latest_symlink = Stockpile.get_latest_symlink_path(repo_dir)
 
-            repo._dirSetAttr('pkgdir', packages_dir)
+            repo = Stockpile.set_repo_path(repo, packages_dir)
 
             packages = yb.doPackageLists(pkgnarrow='available', showdups=False)
             yb.downloadPkgs(packages)
 
-            if not os.path.exists(versioned_dir):
-                os.makedirs(versioned_dir)
+            Stockpile.make_dir(versioned_dir)
 
             for pkg in packages:
                 pkg_file = Stockpile.get_package_filename(pkg)
                 symlink = Stockpile.get_package_symlink_path(versioned_dir, pkg_file)
                 link_to = Stockpile.get_package_symlink_target(pkg_file)
 
-                if not os.path.exists(symlink):
-                    os.symlink(link_to, symlink)
+                Stockpile.symlink(symlink, link_to)
 
-            if os.path.exists(latest_symlink) and os.readlink(latest_symlink) is not repo_version:
-                os.unlink(latest_symlink)
-
-            os.symlink(repo_version, latest_symlink)
+            Stockpile.symlink(latest_symlink, repo_version)
 
 
 
@@ -114,8 +134,8 @@ class StockpileException(Exception):
 
 
 if __name__ == '__main__':
-    repos = []
-    repos.append(Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']))
-    repos.append(Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']))
-    repos.append(Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64']))
-    Stockpile.sync('/root/mirrors', repos)
+    Stockpile.sync('/root/mirrors', [
+        Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
+        Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']),
+        Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
+    ])
