@@ -7,7 +7,7 @@ class Stockpile:
     @staticmethod
     def get_yum():
         yb = yum.YumBase()
-        yb.repos.disableRepo('*')
+        yb._delRepos()
         yb.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
         return yb
 
@@ -88,11 +88,16 @@ class Stockpile:
         return repo
 
     @staticmethod
-    def sync(basedir, repos):
+    def sync(basedir, repos=[], repofile=None):
         if type(basedir) is not str:
             raise StockpileException('Basedir must be a string')
-        if type(repos) is not list:
+        if type(repos) is not None and type(repos) is not list:
             raise StockpileException('Repos must be a list')
+        if type(repofile) is not None and type(repofile) is not str:
+            raise StockpileException('Repo files must be passed as a string')
+
+        if type(repofile) is not None:
+            repos = Stockpile.repos_from_file(repofile)
 
         repo_version = Stockpile.get_repo_version()
 
@@ -100,7 +105,7 @@ class Stockpile:
             yb = Stockpile.get_yum()
             yb.repos.repos[repo.name] = repo
 
-            repo_dir = Stockpile.get_repo_dir(basedir, repo.name)
+            repo_dir = Stockpile.get_repo_dir(basedir, repo.id)
             packages_dir = Stockpile.get_packages_dir(repo_dir)
             versioned_dir = Stockpile.get_versioned_dir(repo_dir, repo_version)
             latest_symlink = Stockpile.get_latest_symlink_path(repo_dir)
@@ -121,6 +126,16 @@ class Stockpile:
 
             Stockpile.symlink(latest_symlink, repo_version)
 
+    @staticmethod
+    def repos_from_file(path):
+        if not os.path.exists(path):
+            raise StockpileException('No such file or directory: %s' % path)
+        yb = Stockpile.get_yum()
+        yb.getReposFromConfigFile(path)
+        for repo in yb.repos.findRepos('*'):
+            repo.enable()
+            yb.doSackSetup(thisrepo=repo.getAttribute('name'))
+        return yb.repos.findRepos('*')
 
 
 class StockpileException(Exception):
@@ -134,8 +149,11 @@ class StockpileException(Exception):
 
 
 if __name__ == '__main__':
-    Stockpile.sync('/root/mirrors', [
-        Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
-        Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']),
-        Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
-    ])
+
+    Stockpile.sync('/root/mirrors', repofile='/etc/yum.repos.d/CentOS-Base.repo')
+
+    #Stockpile.sync('/root/mirrors', [
+    #    Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
+    #    Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']),
+    #    Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
+    #])
