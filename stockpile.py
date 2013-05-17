@@ -54,7 +54,7 @@ class Stockpile:
         if not os.path.islink(path):
             if os.path.isfile(path):
                 raise StockpileException('%s is a file - Cannot create symlink' % path)
-            dir = os.path.basename(path)
+            dir = os.path.dirname(path)
             if not os.path.exists(dir):
                 Stockpile.make_dir(dir)
         elif os.readlink(path) != target:
