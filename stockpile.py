@@ -1,5 +1,6 @@
 import os
 import yum
+import glob
 from datetime import datetime
 
 class StockpileYumBase(yum.YumBase):
@@ -95,16 +96,23 @@ class Stockpile:
         return repo
 
     @staticmethod
-    def sync(basedir, repos=[], repofile=None):
+    def sync(basedir, repos=[], repofiles=[], repodirs=[]):
         if type(basedir) is not str:
             raise StockpileException('Basedir must be a string')
-        if type(repos) is not None and type(repos) is not list:
+        if type(repos) is not list:
             raise StockpileException('Repos must be a list')
-        if type(repofile) is not None and type(repofile) is not str:
-            raise StockpileException('Repo files must be passed as a string')
+        if type(repofiles) is not list:
+            raise StockpileException('Repo files must be passed as a list')
+        if type(repodirs) is not list:
+            raise StockpileException('Repo dirs must be passed as a list')
 
-        if type(repofile) is not None:
-            repos = Stockpile.repos_from_file(repofile)
+        for file in repofiles:
+            for filerepo in Stockpile.repos_from_file(file):
+                repos.append(filerepo)
+
+        for dir in repodirs:
+            for dirrepo in Stockpile.repos_from_dir(dir):
+                repos.append(dirrepo)
 
         repo_version = Stockpile.get_repo_version()
 
@@ -140,9 +148,21 @@ class Stockpile:
         yb = Stockpile.get_yum()
         yb.getReposFromConfigFile(path)
         for repo in yb.repos.findRepos('*'):
-            repo.enable()
             yb.doSackSetup(thisrepo=repo.getAttribute('name'))
-        return yb.repos.findRepos('*')
+        repos = []
+        for repo in yb.repos.findRepos('*'):
+            if repo.isEnabled():
+                repos.append(repo)
+        return repos
+
+    @staticmethod
+    def repos_from_dir(path):
+        repos = []
+        if os.path.isdir(path):
+            for file in sorted(glob.glob('%s/*.repo' % path)):
+                for repo in Stockpile.repos_from_file(file):
+                    repos.append(repo)
+        return repos
 
 
 class StockpileException(Exception):
@@ -157,7 +177,7 @@ class StockpileException(Exception):
 
 if __name__ == '__main__':
 
-    Stockpile.sync('/root/mirrors', repofile='/etc/yum.repos.d/CentOS-Base.repo')
+    Stockpile.sync('/root/mirrors', repodirs=['/root/yumrepos'])
 
     #Stockpile.sync('/root/mirrors', [
     #    Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
