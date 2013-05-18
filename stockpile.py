@@ -2,13 +2,20 @@ import os
 import yum
 from datetime import datetime
 
+class StockpileYumBase(yum.YumBase):
+
+    def __init__(self):
+        yum.YumBase.__init__(self)
+        self.doGenericSetup()
+        self._delRepos()
+        self.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
+        self.repos.repos = {}
+
 class Stockpile:
 
     @staticmethod
     def get_yum():
-        yb = yum.YumBase()
-        yb._delRepos()
-        yb.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
+        yb = StockpileYumBase()
         return yb
 
     @staticmethod
@@ -59,7 +66,7 @@ class Stockpile:
                 Stockpile.make_dir(dir)
         elif os.readlink(path) != target:
             os.unlink(path)
-        if not os.path.exists(path):
+        if not os.path.lexists(path):
             os.symlink(target, path)
 
     @staticmethod
