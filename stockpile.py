@@ -1,4 +1,5 @@
 import os
+import sys
 import yum
 import glob
 from datetime import datetime
@@ -12,6 +13,10 @@ class StockpileYumBase(yum.YumBase):
         self.repos.repos = {}
 
 class Stockpile:
+
+    @staticmethod
+    def debug(message):
+        print 'debug: %s' % message
 
     @staticmethod
     def get_yum():
@@ -176,10 +181,16 @@ class StockpileException(Exception):
 
 if __name__ == '__main__':
 
-    Stockpile.sync('/root/mirrors', repodirs=['/root/yumrepos'])
+    from optparse import OptionParser
 
-    #Stockpile.sync('/root/mirrors', [
-    #    Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
-    #    Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']),
-    #    Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
-    #])
+    parser = OptionParser()
+    parser.add_option('--dest', dest='dest')
+    parser.add_option('-d', '--repodir', action='append', default=[])
+    parser.add_option('-f', '--repofile', action='append', default=[])
+    options, args = parser.parse_args()
+
+    if not options.dest:
+        print '--dest is required'
+        sys.exit(0)
+
+    Stockpile.sync(options.dest, repofiles=options.repofile, repodirs=options.repodir)
