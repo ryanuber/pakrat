@@ -70,7 +70,7 @@ class Stockpile:
     @staticmethod
     def make_dir(dir):
         if not os.path.exists(dir):
-            Stockpile.debug('Creating directory %s' % dir)
+            Stockpile.Log.debug('Creating directory %s' % dir)
             os.makedirs(dir)
 
     @staticmethod
@@ -85,7 +85,7 @@ class Stockpile:
             Stockpile.Log.debug('Unlinking %s because it is outdated' % path)
             os.unlink(path)
         if not os.path.lexists(path):
-            Stockpile.debug('Linking %s to %s' % (path, target))
+            Stockpile.Log.debug('Linking %s to %s' % (path, target))
             os.symlink(target, path)
 
     @staticmethod
