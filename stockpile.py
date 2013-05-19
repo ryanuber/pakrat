@@ -10,6 +10,7 @@ class StockpileYumBase(yum.YumBase):
         yum.YumBase.__init__(self)
         self.preconf = yum._YumPreBaseConf()
         self.preconf.debuglevel = 0
+        self.prerepoconf = yum._YumPreRepoConf()
         self.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
         self.repos.repos = {}
 
@@ -110,7 +111,7 @@ class Stockpile:
     def set_repo_path(repo, path):
         if type(repo) is not yum.yumRepo.YumRepository:
             raise StockpileException('Repo must be a yum.yumRepo.YumRepository instance')
-        repo._dirSetAttr('pkgdir', path)
+        repo.pkgdir = path
         return repo
 
     @staticmethod
@@ -136,7 +137,6 @@ class Stockpile:
 
         for repo in repos:
             yb = Stockpile.get_yum()
-            yb.repos.repos[repo.name] = repo
 
             repo_dir = Stockpile.get_repo_dir(basedir, repo.id)
             packages_dir = Stockpile.get_packages_dir(repo_dir)
@@ -144,6 +144,8 @@ class Stockpile:
             latest_symlink = Stockpile.get_latest_symlink_path(repo_dir)
 
             repo = Stockpile.set_repo_path(repo, packages_dir)
+            yb.repos.add(repo)
+            yb.repos.enableRepo(repo.id)
 
             packages = yb.doPackageLists(pkgnarrow='available', showdups=False)
             Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
