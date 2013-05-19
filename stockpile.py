@@ -9,14 +9,25 @@ class StockpileYumBase(yum.YumBase):
     def __init__(self):
         yum.YumBase.__init__(self)
         self.preconf = yum._YumPreBaseConf()
+        self.preconf.debuglevel = 0
         self.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
         self.repos.repos = {}
 
 class Stockpile:
 
-    @staticmethod
-    def debug(message):
-        print 'debug: %s' % message
+    class Log:
+
+        @staticmethod
+        def write(message):
+            print message
+
+        @staticmethod
+        def debug(message):
+            Stockpile.Log.write('debug: %s' % message)
+
+        @staticmethod
+        def info(message):
+            Stockpile.Log.write('info: %s' % message)
 
     @staticmethod
     def get_yum():
@@ -59,6 +70,7 @@ class Stockpile:
     @staticmethod
     def make_dir(dir):
         if not os.path.exists(dir):
+            Stockpile.debug('Creating directory %s' % dir)
             os.makedirs(dir)
 
     @staticmethod
@@ -70,8 +82,10 @@ class Stockpile:
             if not os.path.exists(dir):
                 Stockpile.make_dir(dir)
         elif os.readlink(path) != target:
+            Stockpile.Log.debug('Unlinking %s because it is outdated' % path)
             os.unlink(path)
         if not os.path.lexists(path):
+            Stockpile.debug('Linking %s to %s' % (path, target))
             os.symlink(target, path)
 
     @staticmethod
@@ -132,7 +146,9 @@ class Stockpile:
             repo = Stockpile.set_repo_path(repo, packages_dir)
 
             packages = yb.doPackageLists(pkgnarrow='available', showdups=False)
+            Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
             yb.downloadPkgs(packages)
+            Stockpile.Log.info('Finished downloading packages from repository %s' % repo.id)
 
             Stockpile.make_dir(versioned_dir)
 
@@ -156,7 +172,10 @@ class Stockpile:
         repos = []
         for repo in yb.repos.findRepos('*'):
             if repo.isEnabled():
+                Stockpile.Log.info('Added repo %s from file %s' % (repo.id, path))
                 repos.append(repo)
+            else:
+                Stockpile.Log.debug('Not adding repo %s because it is disabled' % repo.id)
         return repos
 
     @staticmethod
