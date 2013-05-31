@@ -69,6 +69,52 @@ class Stockpile:
         return '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
 
     @staticmethod
+    def validate_basedir(basedir):
+        if type(basedir) is not str:
+            raise StockpileException('basedir must be a string')
+
+    @staticmethod
+    def validate_basedirs(basedirs):
+        if type(basedirs) is not list:
+            raise StockpileException('basedirs must be a list')
+        for basedir in basedirs:
+            Stockpile.validate_basedir(basedir)
+
+    @staticmethod
+    def validate_mirrorlist(mirrorlist):
+        if type(mirrorlist) is not str:
+            raise StockpileException('mirrorlist must be a string')
+        if not mirrorlist.start_with('http'):
+            raise StockpileException('mirror lists must start with "http"')
+
+    @staticmethod
+    def validate_repos(repos):
+        if type(repos) is not list:
+            raise StockpileException('repos must be a list')
+
+    @staticmethod
+    def validate_repofiles(repofiles):
+        if type(repofiles) is not list:
+            raise StockpileException('repofiles must be a list')
+
+    @staticmethod
+    def validate_repodirs(repodirs):
+        if type(repodirs) is not list:
+            raise StockpileException('repodirs must be a list')
+
+    @staticmethod
+    def validate_arch(arch):
+        if arch not in ['i386', 'i486', 'i586', 'i686', 'x86_64', 'noarch']:
+            raise StockpileException('Invalid architecture "%s"' % arch)
+
+    @staticmethod
+    def validate_arch_list(arch_list):
+        if type(arch_list) is not list:
+            raise StockpileException('architecture[s] must be a list')
+        for arch in arch_list:
+            Stockpile.validate_arch(arch)
+
+    @staticmethod
     def make_dir(dir):
         if not os.path.exists(dir):
             Stockpile.Log.debug('Creating directory %s' % dir)
@@ -93,16 +139,13 @@ class Stockpile:
     def repo(name, arch=None, baseurls=None, mirrorlist=None):
         yb = Stockpile.get_yum()
         if baseurls is not None:
-            if type(baseurls) is not list:
-                raise StockpileException('Baseurls must be passed as a list')
+            Stockpile.validate_baseurls(baseurls)
             repo = yb.add_enable_repo(name, baseurls=baseurls)
         if mirrorlist is not None:
-            if type(mirrorlist) is not str:
-                raise StockpileException('Mirrorlists must be passed as a string')
+            Stockpile.validate_mirrorlist(mirrorlist)
             repo = yb.add_enable_repo(name, mirrorlist=mirrorlist)
         if arch is not None:
-            if type(arch) is not list:
-                raise StockpileException('Arch must be passed as a list')
+            Stockpile.validate_arch_list(arch)
             yb.doSackSetup(thisrepo=name, archlist=arch)
 
         return repo
@@ -116,14 +159,10 @@ class Stockpile:
 
     @staticmethod
     def sync(basedir, repos=[], repofiles=[], repodirs=[]):
-        if type(basedir) is not str:
-            raise StockpileException('Basedir must be a string')
-        if type(repos) is not list:
-            raise StockpileException('Repos must be a list')
-        if type(repofiles) is not list:
-            raise StockpileException('Repo files must be passed as a list')
-        if type(repodirs) is not list:
-            raise StockpileException('Repo dirs must be passed as a list')
+        Stockpile.validate_basedir(basedir)
+        Stockpile.validate_repos(repos)
+        Stockpile.validate_repofiles(repofiles)
+        Stockpile.validate_repodirs(repodirs)
 
         for file in repofiles:
             for filerepo in Stockpile.repos_from_file(file):
@@ -133,38 +172,42 @@ class Stockpile:
             for dirrepo in Stockpile.repos_from_dir(dir):
                 repos.append(dirrepo)
 
-        repo_version = Stockpile.get_repo_version()
+        version = Stockpile.get_repo_version()
 
         for repo in repos:
-            yb = Stockpile.get_yum()
+            dest = Stockpile.get_repo_dir(basedir, repo.id)
+            Stockpile.sync_repo(repo, dest, version)
 
-            repo_dir = Stockpile.get_repo_dir(basedir, repo.id)
-            packages_dir = Stockpile.get_packages_dir(repo_dir)
-            versioned_dir = Stockpile.get_versioned_dir(repo_dir, repo_version)
-            latest_symlink = Stockpile.get_latest_symlink_path(repo_dir)
+    @staticmethod
+    def sync_repo(repo, dest, version):
+        yb = Stockpile.get_yum()
 
-            repo = Stockpile.set_repo_path(repo, packages_dir)
-            yb.repos.add(repo)
-            yb.repos.enableRepo(repo.id)
+        packages_dir = Stockpile.get_packages_dir(dest)
+        versioned_dir = Stockpile.get_versioned_dir(dest, version)
+        latest_symlink = Stockpile.get_latest_symlink_path(dest)
 
-            packages = []
-            for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
-                packages.append(package)
+        repo = Stockpile.set_repo_path(repo, packages_dir)
+        yb.repos.add(repo)
+        yb.repos.enableRepo(repo.id)
 
-            Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
-            yb.downloadPkgs(packages)
-            Stockpile.Log.info('Finished downloading packages from repository %s' % repo.id)
+        packages = []
+        for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
+            packages.append(package)
 
-            Stockpile.make_dir(versioned_dir)
+        Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
+        yb.downloadPkgs(packages)
+        Stockpile.Log.info('Finished downloading packages from repository %s' % repo.id)
 
-            for pkg in packages:
-                pkg_file = Stockpile.get_package_filename(pkg)
-                symlink = Stockpile.get_package_symlink_path(versioned_dir, pkg_file)
-                link_to = Stockpile.get_package_symlink_target(pkg_file)
+        Stockpile.make_dir(versioned_dir)
 
-                Stockpile.symlink(symlink, link_to)
+        for pkg in packages:
+            pkg_file = Stockpile.get_package_filename(pkg)
+            symlink = Stockpile.get_package_symlink_path(versioned_dir, pkg_file)
+            link_to = Stockpile.get_package_symlink_target(pkg_file)
 
-            Stockpile.symlink(latest_symlink, repo_version)
+            Stockpile.symlink(symlink, link_to)
+
+        Stockpile.symlink(latest_symlink, version)
 
     @staticmethod
     def repos_from_file(path):
