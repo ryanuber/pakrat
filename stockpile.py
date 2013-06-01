@@ -3,6 +3,7 @@ import sys
 import yum
 import glob
 from datetime import datetime
+import multiprocessing
 
 class StockpileYumBase(yum.YumBase):
 
@@ -174,9 +175,20 @@ class Stockpile:
 
         version = Stockpile.get_repo_version()
 
+        processes = []
         for repo in repos:
             dest = Stockpile.get_repo_dir(basedir, repo.id)
-            Stockpile.sync_repo(repo, dest, version)
+            p = multiprocessing.Process(target=Stockpile.sync_repo, args=(repo, dest, version))
+            p.start()
+            processes.append(p)
+
+        complete_count = 0
+        while True:
+            for p in processes:
+                if not p.is_alive():
+                    complete_count += 1
+            if complete_count == len(processes):
+                break
 
     @staticmethod
     def sync_repo(repo, dest, version):
@@ -194,8 +206,7 @@ class Stockpile:
         for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
             packages.append(package)
 
-        Stockpile.Log.info('Repository %s contains %d packages' % (repo.id, len(packages)))
-        Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
+        Stockpile.Log.info('Syncing %d packages from repository %s' % (len(packages), repo.id))
         yb.downloadPkgs(packages)
         Stockpile.Log.info('Finished downloading packages from repository %s' % repo.id)
 
@@ -244,7 +255,6 @@ class StockpileException(Exception):
 
     def __str__(self):
         return repr(self.message)
-
 
 
 if __name__ == '__main__':
