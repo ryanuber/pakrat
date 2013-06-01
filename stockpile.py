@@ -194,6 +194,7 @@ class Stockpile:
         for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
             packages.append(package)
 
+        Stockpile.Log.info('Repository %s contains %d packages' % (repo.id, len(packages)))
         Stockpile.Log.info('Downloading packages from repository %s' % repo.id)
         yb.downloadPkgs(packages)
         Stockpile.Log.info('Finished downloading packages from repository %s' % repo.id)
