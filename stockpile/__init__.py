@@ -1,5 +1,4 @@
 import multiprocessing
-import stockpile.yumbase
 from stockpile import util
 from stockpile import log
 from stockpile import repotools
