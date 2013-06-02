@@ -1,6 +1,7 @@
-#!/usr/bin/env python -tt
+#!/usr/bin/python -tt
 
 import stockpile
+import sys
 from optparse import OptionParser
 
 parser = OptionParser()

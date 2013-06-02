@@ -1,4 +1,3 @@
-import sys
 import multiprocessing
 import stockpile.yumbase
 from stockpile import util
