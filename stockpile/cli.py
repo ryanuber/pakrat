@@ -1,3 +1,5 @@
+#!/usr/bin/env python -tt
+
 import stockpile
 from optparse import OptionParser
 
