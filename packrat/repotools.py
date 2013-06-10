@@ -1,8 +1,8 @@
 import os
 import yum
 from glob import glob
-from stockpile import util
-from stockpile import log
+from packrat import util
+from packrat import log
 
 def from_file(path):
     if not os.path.exists(path):

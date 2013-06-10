@@ -1,5 +1,5 @@
-Stockpile
----------
+PackRat
+-------
 
 A completely stateless library to sync YUM repositories from multiple sources
 
@@ -8,22 +8,23 @@ How to use it
 
 ### Specify some *.repo file paths to load repositories from:
 
-```
-Stockpile.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
+```python
+packrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
 ```
 
 ### Load from a repos.d directory
 
 You can pass in multiple directories to load:
 
-```
-Stockpile.sync('/root/mirrors', repodirs=['/root/yumrepos'])
+```python
+from packrat import sync
+sync('/root/mirrors', repodirs=['/root/yumrepos'])
 ```
 
 ### Direct Python library calls
 
 ```python
-from stockpile import repo, sync
+from packrat import repo, sync
 sync('/root/mirrors', repos=[
     repo('base', baseurls=['http://mirror.centos.org/centos/6/os/x86_64']),
     repo('updates', baseurls=['http://mirror.centos.org/centos/6/updates/x86_64']),
@@ -38,7 +39,7 @@ repository directories, files, and in-line definitions all working together
 additively.
 
 ```python
-from stockpile import repo, sync
+from packrat import repo, sync
 inline_repos = [
     repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
 ]
@@ -51,7 +52,7 @@ CLI interface
 -------------
 
 ```
-Usage: stockpile [options]
+Usage: packrat [options]
 
 Options:
   -h, --help            show this help message and exit
@@ -61,7 +62,7 @@ Options:
 ```
 
 ```
-$ stockpile --dest /root/mirrors/ --repodir /etc/yum.repos.d/
+$ packrat --dest /root/mirrors/ --repodir /etc/yum.repos.d/
 debug: Not adding repo contrib because it is disabled
 debug: Not adding repo centosplus because it is disabled
 info: Added repo base from file /root/yumrepos/CentOS-Base.repo

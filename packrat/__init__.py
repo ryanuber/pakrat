@@ -1,7 +1,7 @@
 import multiprocessing
-from stockpile import util
-from stockpile import log
-from stockpile import repotools
+from packrat import util
+from packrat import log
+from packrat import repotools
 
 def sync(basedir, repos=[], repofiles=[], repodirs=[]):
     util.validate_basedir(basedir)
