@@ -3,40 +3,65 @@ Stockpile
 
 A completely stateless library to sync YUM repositories from multiple sources
 
----
+How to use it
+-------------
 
-Specify some *.repo file paths to load repositories from:
+### Specify some *.repo file paths to load repositories from:
 
 ```
 Stockpile.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
 ```
 
-Load in some repositories from a repos.d-style directory. You can pass in
-multiple directories to load:
+### Load from a repos.d directory
+
+You can pass in multiple directories to load:
 
 ```
 Stockpile.sync('/root/mirrors', repodirs=['/root/yumrepos'])
 ```
 
-No configuration on disk? No problem! Pass in the repo data directly using
-Stockpile's built-in repo generating method:
+### Direct Python library calls
 
-```
-Stockpile.sync('/root/mirrors', [
-    Stockpile.repo('centos-base', ['x86_64'], ['http://mirror.centos.org/centos/6/os/x86_64']),
-    Stockpile.repo('centos-updates', ['x86_64'], ['http://mirror.centos.org/centos/6/updates/x86_64']),
-    Stockpile.repo('epel', ['x86_64'], ['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
+```python
+from stockpile import repo, sync
+sync('/root/mirrors', repos=[
+    repo('base', baseurls=['http://mirror.centos.org/centos/6/os/x86_64']),
+    repo('updates', baseurls=['http://mirror.centos.org/centos/6/updates/x86_64']),
+    repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
 ])
 ```
+
+### Mix and Match
 
 Keep in mind that you can mix all 3 of the above input types. You can have
 repository directories, files, and in-line definitions all working together
 additively.
 
-CLI interface:
+```python
+from stockpile import repo, sync
+inline_repos = [
+    repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
+]
+repo_dirs = [ '/etc/yum.repos.d' ]
+repo_files = [ '/root/my-yum-repo.conf' ]
+sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles = repo_files)
+```
+
+CLI interface
+-------------
 
 ```
-$ python stockpile.py  --dest /root/mirrors/ --repodir /root/yumrepos/
+Usage: stockpile [options]
+
+Options:
+  -h, --help            show this help message and exit
+  --dest=DEST           
+  -d REPODIR, --repodir=REPODIR
+  -f REPOFILE, --repofile=REPOFILE
+```
+
+```
+$ stockpile --dest /root/mirrors/ --repodir /etc/yum.repos.d/
 debug: Not adding repo contrib because it is disabled
 debug: Not adding repo centosplus because it is disabled
 info: Added repo base from file /root/yumrepos/CentOS-Base.repo

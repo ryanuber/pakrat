@@ -64,6 +64,19 @@ def sync_repo(repo, dest, version):
 
     util.symlink(latest_symlink, version)
 
+def repo(name, arch=None, baseurls=None, mirrorlist=None):
+    yb = util.get_yum()
+    if baseurls is not None:
+        util.validate_baseurls(baseurls)
+        repo = yb.add_enable_repo(name, baseurls=baseurls)
+    if mirrorlist is not None:
+        util.validate_mirrorlist(mirrorlist)
+        repo = yb.add_enable_repo(name, mirrorlist=mirrorlist)
+    if arch is not None:
+        util.validate_arch_list(arch)
+        yb.doSackSetup(thisrepo=name, archlist=arch)
+    return repo
+
 class exception(Exception):
 
     def __init__(self, message):
