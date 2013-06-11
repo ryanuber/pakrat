@@ -9,7 +9,7 @@ How to use it
 ### Specify some *.repo file paths to load repositories from:
 
 ```python
-packrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
+pakrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
 ```
 
 ### Load from a repos.d directory
@@ -17,14 +17,14 @@ packrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
 You can pass in multiple directories to load:
 
 ```python
-from packrat import sync
+from pakrat import sync
 sync('/root/mirrors', repodirs=['/root/yumrepos'])
 ```
 
 ### Direct Python library calls
 
 ```python
-from packrat import repo, sync
+from pakrat import repo, sync
 sync('/root/mirrors', repos=[
     repo('base', baseurls=['http://mirror.centos.org/centos/6/os/x86_64']),
     repo('updates', baseurls=['http://mirror.centos.org/centos/6/updates/x86_64']),
@@ -39,7 +39,7 @@ repository directories, files, and in-line definitions all working together
 additively.
 
 ```python
-from packrat import repo, sync
+from pakrat import repo, sync
 inline_repos = [
     repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
 ]
@@ -52,7 +52,7 @@ CLI interface
 -------------
 
 ```
-Usage: packrat [options]
+Usage: pakrat [options]
 
 Options:
   -h, --help            show this help message and exit
@@ -62,7 +62,7 @@ Options:
 ```
 
 ```
-$ packrat --dest /root/mirrors/ --repodir /etc/yum.repos.d/
+$ pakrat --dest /root/mirrors/ --repodir /etc/yum.repos.d/
 debug: Not adding repo contrib because it is disabled
 debug: Not adding repo centosplus because it is disabled
 info: Added repo base from file /root/yumrepos/CentOS-Base.repo

@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from packrat.yumbase import yumbase
+from pakrat.yumbase import yumbase
 
 def get_yum():
     yb = yumbase()
@@ -33,49 +33,49 @@ def get_package_filename(pkg):
 
 def validate_basedir(basedir):
     if type(basedir) is not str:
-        raise packrat.exception('basedir must be a string')
+        raise pakrat.exception('basedir must be a string')
 
 def validate_basedirs(basedirs):
     if type(basedirs) is not list:
-        raise packrat.exception('basedirs must be a list')
+        raise pakrat.exception('basedirs must be a list')
     for basedir in basedirs:
         validate_basedir(basedir)
 
 def validate_baseurl(baseurl):
     if type(baseurl) is not str:
-        raise packrat.exception('baseurl must be a string')
+        raise pakrat.exception('baseurl must be a string')
 
 def validate_baseurls(baseurls):
     if type(baseurls) is not list:
-        raise packrat.exception('baseurls must be a list')
+        raise pakrat.exception('baseurls must be a list')
     for baseurl in baseurls:
         validate_baseurl(baseurl)
 
 def validate_mirrorlist(mirrorlist):
     if type(mirrorlist) is not str:
-        raise packrat.exception('mirrorlist must be a string')
+        raise pakrat.exception('mirrorlist must be a string')
     if not mirrorlist.start_with('http'):
-        raise packrat.exception('mirror lists must start with "http"')
+        raise pakrat.exception('mirror lists must start with "http"')
 
 def validate_repos(repos):
     if type(repos) is not list:
-        raise packrat.exception('repos must be a list')
+        raise pakrat.exception('repos must be a list')
 
 def validate_repofiles(repofiles):
     if type(repofiles) is not list:
-        raise packrat.exception('repofiles must be a list')
+        raise pakrat.exception('repofiles must be a list')
 
 def validate_repodirs(repodirs):
     if type(repodirs) is not list:
-        raise packrat.exception('repodirs must be a list')
+        raise pakrat.exception('repodirs must be a list')
 
 def validate_arch(arch):
     if arch not in ['i386', 'i486', 'i586', 'i686', 'x86_64', 'noarch']:
-        raise packrat.exception('Invalid architecture "%s"' % arch)
+        raise pakrat.exception('Invalid architecture "%s"' % arch)
 
 def validate_arch_list(arch_list):
     if type(arch_list) is not list:
-        raise packrat.exception('architecture[s] must be a list')
+        raise pakrat.exception('architecture[s] must be a list')
     for arch in arch_list:
         validate_arch(arch)
 
@@ -87,7 +87,7 @@ def make_dir(dir):
 def symlink(path, target):
     if not os.path.islink(path):
         if os.path.isfile(path):
-            raise packrat.exception('%s is a file - Cannot create symlink' % path)
+            raise pakrat.exception('%s is a file - Cannot create symlink' % path)
         dir = os.path.dirname(path)
         if not os.path.exists(dir):
             make_dir(dir)

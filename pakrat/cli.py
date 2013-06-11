@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 
-import packrat
+import pakrat
 import sys
 from optparse import OptionParser
 
@@ -14,4 +14,4 @@ if not options.dest:
     print '--dest is required'
     sys.exit(1)
 
-packrat.sync(options.dest, repofiles=options.repofile, repodirs=options.repodir)
+pakrat.sync(options.dest, repofiles=options.repofile, repodirs=options.repodir)
