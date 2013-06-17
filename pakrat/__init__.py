@@ -60,7 +60,7 @@ def sync_repo(repo, dest, version):
     pkglist = []
     for pkg in packages:
         pkglist.append(util.get_package_filename(pkg))
-    repotools.create_metadata(packages_dir, versioned_dir, packages)
+    repotools.create_metadata(packages_dir, versioned_dir, pkglist)
 
     util.symlink(latest_symlink, version)
 
