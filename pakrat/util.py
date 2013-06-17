@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pakrat.yumbase import yumbase
+from pakrat import logger
 
 def get_yum():
     yb = yumbase()
@@ -81,7 +82,7 @@ def validate_arch_list(arch_list):
 
 def make_dir(dir):
     if not os.path.exists(dir):
-        Log.debug('Creating directory %s' % dir)
+        logger.debug('Creating directory %s' % dir)
         os.makedirs(dir)
 
 def symlink(path, target):
@@ -92,8 +93,8 @@ def symlink(path, target):
         if not os.path.exists(dir):
             make_dir(dir)
     elif os.readlink(path) != target:
-        Log.debug('Unlinking %s because it is outdated' % path)
+        logger.debug('Unlinking %s because it is outdated' % path)
         os.unlink(path)
     if not os.path.lexists(path):
-        Log.debug('Linking %s to %s' % (path, target))
+        logger.debug('Linking %s to %s' % (path, target))
         os.symlink(target, path)

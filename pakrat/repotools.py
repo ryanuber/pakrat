@@ -1,5 +1,6 @@
 import os
 import yum
+import createrepo
 from glob import glob
 from pakrat import util
 from pakrat import log
@@ -33,3 +34,13 @@ def set_path(repo, path):
         raise exception('Repo must be a yum.yumRepo.YumRepository instance')
     repo.pkgdir = path
     return repo
+
+def create_metadata(sourcedir, destdir, packages=None):
+    conf = createrepo.MetaDataConfig()
+    conf.directory = sourcedir
+    conf.outputdir = destdir
+    conf.pkglist = packages
+    generator = createrepo.SplitMetaDataGenerator(conf)
+    generator.doPkgMetadata()
+    generator.doRepoMetadata()
+    generator.doFinalMove()

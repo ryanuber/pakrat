@@ -1,4 +1,5 @@
 import multiprocessing
+import subprocess
 from pakrat import util
 from pakrat import log
 from pakrat import repotools
@@ -55,12 +56,11 @@ def sync_repo(repo, dest, version):
 
     util.make_dir(versioned_dir)
 
+    log.info('Creating metadata for repository %s' % repo.id)
+    pkglist = []
     for pkg in packages:
-        pkg_file = util.get_package_filename(pkg)
-        symlink = util.get_package_symlink_path(versioned_dir, pkg_file)
-        link_to = util.get_package_symlink_target(pkg_file)
-
-        util.symlink(symlink, link_to)
+        pkglist.append(util.get_package_filename(pkg))
+    repotools.create_metadata(packages_dir, versioned_dir, packages)
 
     util.symlink(latest_symlink, version)
 
