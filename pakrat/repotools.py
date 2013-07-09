@@ -2,12 +2,12 @@ import os
 import yum
 import createrepo
 from glob import glob
-from pakrat import util
+from pakrat import util, log
 from pakrat import log
 
 def from_file(path):
     if not os.path.exists(path):
-        raise exception('No such file or directory: %s' % path)
+        raise Exception('No such file or directory: %s' % path)
     yb = util.get_yum()
     yb.getReposFromConfigFile(path)
     for repo in yb.repos.findRepos('*'):
@@ -31,7 +31,7 @@ def from_dir(path):
 
 def set_path(repo, path):
     if type(repo) is not yum.yumRepo.YumRepository:
-        raise exception('Repo must be a yum.yumRepo.YumRepository instance')
+        raise Exception('Repo must be a yum.yumRepo.YumRepository instance')
     repo.pkgdir = path
     return repo
 

@@ -1,8 +1,6 @@
 import multiprocessing
 import subprocess
-from pakrat import util
-from pakrat import log
-from pakrat import repotools
+from pakrat import util, log, repotools
 
 def sync(basedir, repos=[], repofiles=[], repodirs=[]):
     util.validate_basedir(basedir)
@@ -63,6 +61,7 @@ def sync_repo(repo, dest, version):
     repotools.create_metadata(packages_dir, versioned_dir, pkglist)
 
     util.symlink(latest_symlink, version)
+    util.symlink(util.get_packages_dir(versioned_dir), packages_dir)
 
 def repo(name, arch=None, baseurls=None, mirrorlist=None):
     yb = util.get_yum()
@@ -76,11 +75,3 @@ def repo(name, arch=None, baseurls=None, mirrorlist=None):
         util.validate_arch_list(arch)
         yb.doSackSetup(thisrepo=name, archlist=arch)
     return repo
-
-class exception(Exception):
-
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return repr(self.message)

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from pakrat.yumbase import yumbase
-from pakrat import logger
+from pakrat import log
 
 def get_yum():
     yb = yumbase()
@@ -34,67 +34,67 @@ def get_package_filename(pkg):
 
 def validate_basedir(basedir):
     if type(basedir) is not str:
-        raise pakrat.exception('basedir must be a string')
+        raise Exception('basedir must be a string')
 
 def validate_basedirs(basedirs):
     if type(basedirs) is not list:
-        raise pakrat.exception('basedirs must be a list')
+        raise Exception('basedirs must be a list')
     for basedir in basedirs:
         validate_basedir(basedir)
 
 def validate_baseurl(baseurl):
     if type(baseurl) is not str:
-        raise pakrat.exception('baseurl must be a string')
+        raise Exception('baseurl must be a string')
 
 def validate_baseurls(baseurls):
     if type(baseurls) is not list:
-        raise pakrat.exception('baseurls must be a list')
+        raise Exception('baseurls must be a list')
     for baseurl in baseurls:
         validate_baseurl(baseurl)
 
 def validate_mirrorlist(mirrorlist):
     if type(mirrorlist) is not str:
-        raise pakrat.exception('mirrorlist must be a string')
+        raise Exception('mirrorlist must be a string')
     if not mirrorlist.start_with('http'):
-        raise pakrat.exception('mirror lists must start with "http"')
+        raise Exception('mirror lists must start with "http"')
 
 def validate_repos(repos):
     if type(repos) is not list:
-        raise pakrat.exception('repos must be a list')
+        raise Exception('repos must be a list')
 
 def validate_repofiles(repofiles):
     if type(repofiles) is not list:
-        raise pakrat.exception('repofiles must be a list')
+        raise Exception('repofiles must be a list')
 
 def validate_repodirs(repodirs):
     if type(repodirs) is not list:
-        raise pakrat.exception('repodirs must be a list')
+        raise Exception('repodirs must be a list')
 
 def validate_arch(arch):
     if arch not in ['i386', 'i486', 'i586', 'i686', 'x86_64', 'noarch']:
-        raise pakrat.exception('Invalid architecture "%s"' % arch)
+        raise Exception('Invalid architecture "%s"' % arch)
 
 def validate_arch_list(arch_list):
     if type(arch_list) is not list:
-        raise pakrat.exception('architecture[s] must be a list')
+        raise Exception('architecture[s] must be a list')
     for arch in arch_list:
         validate_arch(arch)
 
 def make_dir(dir):
     if not os.path.exists(dir):
-        logger.debug('Creating directory %s' % dir)
+        log.debug('Creating directory %s' % dir)
         os.makedirs(dir)
 
 def symlink(path, target):
     if not os.path.islink(path):
         if os.path.isfile(path):
-            raise pakrat.exception('%s is a file - Cannot create symlink' % path)
+            raise Exception('%s is a file - Cannot create symlink' % path)
         dir = os.path.dirname(path)
         if not os.path.exists(dir):
             make_dir(dir)
     elif os.readlink(path) != target:
-        logger.debug('Unlinking %s because it is outdated' % path)
+        log.debug('Unlinking %s because it is outdated' % path)
         os.unlink(path)
     if not os.path.lexists(path):
-        logger.debug('Linking %s to %s' % (path, target))
+        log.debug('Linking %s to %s' % (path, target))
         os.symlink(target, path)
