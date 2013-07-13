@@ -72,6 +72,26 @@ repo_files = [ '/root/my-yum-repo.conf' ]
 sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles=repo_files)
 ```
 
+### Repository versioning
+
+By default, repositories will be versioned as YYYY-MM-DD. This means that if a
+repository is synced more than once per day, it will overwrite any existing
+packages from previous runs that day. You can create any versioning scheme you
+like though, by passing in the version rather than letting Pakrat do it for you.
+Below is an example using a unix timestamp instead of the default:
+
+Library:
+
+```python
+pakrat.sync('...', baseurls=[...], repoversion=int(time.time()))
+```
+
+CLI:
+
+```
+pakrat --dest ... --repofile ... --repoversion `date +%s`
+```
+
 CLI interface
 -------------
 
