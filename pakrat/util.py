@@ -17,6 +17,9 @@ def get_repo_dir(basedir, name):
 def get_packages_dir(repodir):
     return '%s/packages' % repodir
 
+def get_package_relativedir(packagename):
+    return 'packages/%s' % packagename
+
 def get_versioned_dir(repodir, version):
     return '%s/%s' % (repodir, version)
 

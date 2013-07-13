@@ -57,11 +57,11 @@ def sync_repo(repo, dest, version):
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
-        pkglist.append(util.get_package_filename(pkg))
-    repotools.create_metadata(packages_dir, versioned_dir, pkglist)
+        pkglist.append(util.get_package_relativedir(util.get_package_filename(pkg)))
+    util.symlink(util.get_packages_dir(versioned_dir), packages_dir)
+    repotools.create_metadata(versioned_dir, versioned_dir, pkglist)
 
     util.symlink(latest_symlink, version)
-    util.symlink(util.get_packages_dir(versioned_dir), packages_dir)
 
 def repo(name, arch=None, baseurls=None, mirrorlist=None):
     yb = util.get_yum()
