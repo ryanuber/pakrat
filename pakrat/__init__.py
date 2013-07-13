@@ -2,7 +2,9 @@ import multiprocessing
 import subprocess
 from pakrat import util, log, repotools
 
-def sync(basedir, repos=[], repofiles=[], repodirs=[]):
+__version__ = '0.0.6'
+
+def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
     util.validate_basedir(basedir)
     util.validate_repos(repos)
     util.validate_repofiles(repofiles)
@@ -16,7 +18,8 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[]):
         for dirrepo in repotools.from_dir(dir):
             repos.append(dirrepo)
 
-    version = util.get_repo_version()
+    if not version:
+        version = util.get_repo_version()
 
     processes = []
     for repo in repos:
