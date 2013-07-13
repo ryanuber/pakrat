@@ -6,7 +6,6 @@ setup(name='pakrat',
     author='Ryan Uber',
     author_email='ru@ryanuber.com',
     url='https://github.com/ryanuber/pakrat',
-    install_requires=['multiprocessing'],
     packages=['pakrat'],
     scripts=['bin/pakrat'],
     package_data={'pakrat': ['LICENSE', 'README.md']}
