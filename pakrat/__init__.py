@@ -18,13 +18,13 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
         for dirrepo in repotools.from_dir(dir):
             repos.append(dirrepo)
 
-    if not version:
-        version = util.get_repo_version()
+    if not repoversion:
+        repoversion = util.get_repo_version()
 
     processes = []
     for repo in repos:
         dest = util.get_repo_dir(basedir, repo.id)
-        p = multiprocessing.Process(target=sync_repo, args=(repo, dest, version))
+        p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion))
         p.start()
         processes.append(p)
 

@@ -40,6 +40,7 @@ def create_metadata(sourcedir, destdir, packages=None):
     conf.directory = sourcedir
     conf.outputdir = destdir
     conf.pkglist = packages
+    conf.quiet = True
     generator = createrepo.SplitMetaDataGenerator(conf)
     generator.doPkgMetadata()
     generator.doRepoMetadata()

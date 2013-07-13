@@ -5,10 +5,15 @@ import sys
 from optparse import OptionParser
 
 parser = OptionParser(version='pakrat %s' % pakrat.__version__)
-parser.add_option('--dest')
-parser.add_option('-d', '--repodir', action='append', default=[])
-parser.add_option('-f', '--repofile', action='append', default=[])
-parser.add_option('-r', '--repoversion', default=None)
+parser.add_option('--dest',
+    help='Root destination for all YUM repositories')
+parser.add_option('-d', '--repodir', action='append', default=[],
+    help='A "repos.d" directory of YUM configurations. (repeatable)')
+parser.add_option('-f', '--repofile', action='append', default=[],
+    help='A YUM configuration file. (repeatable)')
+parser.add_option('-r', '--repoversion', default=None,
+    help=('The version of the repository to create. By default, this will '
+          'be the current date in format: YYYY-MM-DD'))
 options, args = parser.parse_args()
 
 if not options.dest:

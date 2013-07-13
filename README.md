@@ -1,7 +1,29 @@
-PackRat
+Pakrat
 -------
 
-A completely stateless library to sync YUM repositories from multiple sources
+A stateless python library and CLI tool to sync and version YUM repositories
+from multiple sources
+
+What does it do?
+----------------
+
+* You invoke pakrat and pass in a few YUM repos (see below for how to do
+  this)
+* Pakrat fetches all packages found in the repositories you specified and saves
+  them into a shared `packages` directory.
+* Pakrat uses the `createrepo` library to compile metadata about the packages
+  that were downloaded and saves it into a versioned directory (see explanation
+  below)
+* You expose the top-level directory with any HTTP server, and you now have
+  access to versioned YUM repositories!
+
+Features
+-------
+
+* Data deduplication by using a common packages directory. Each run, the only
+  new data created is the repodata (usually a few Mb)
+* Threaded downloading and repo creation
+* CLI provides easy interface for use by CRON or similar scheduler
 
 How to use it
 -------------
@@ -45,7 +67,7 @@ inline_repos = [
 ]
 repo_dirs = [ '/etc/yum.repos.d' ]
 repo_files = [ '/root/my-yum-repo.conf' ]
-sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles = repo_files)
+sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles=repo_files)
 ```
 
 CLI interface
@@ -55,25 +77,21 @@ CLI interface
 Usage: pakrat [options]
 
 Options:
+  --version             show program's version number and exit
   -h, --help            show this help message and exit
-  --dest=DEST           
+  --dest=DEST           Root destination for all YUM repositories
   -d REPODIR, --repodir=REPODIR
+                        A "repos.d" directory of YUM configurations.
+                        (repeatable)
   -f REPOFILE, --repofile=REPOFILE
+                        A YUM configuration file. (repeatable)
+  -r REPOVERSION, --repoversion=REPOVERSION
+                        The version of the repository to create. By default,
+                        this will be the current date in format: YYYY-MM-DD
 ```
 
-```
-$ pakrat --dest /root/mirrors/ --repodir /etc/yum.repos.d/
-debug: Not adding repo contrib because it is disabled
-debug: Not adding repo centosplus because it is disabled
-info: Added repo base from file /root/yumrepos/CentOS-Base.repo
-info: Added repo updates from file /root/yumrepos/CentOS-Base.repo
-debug: Not adding repo extras because it is disabled
-info: Downloading packages from repository base
-info: Finished downloading packages from repository base
-debug: Unlinking /root/mirrors/base/latest because it is outdated
-debug: Linking /root/mirrors/base/latest to 5-19-2013
-info: Downloading packages from repository updates
-info: Finished downloading packages from repository updates
-debug: Unlinking /root/mirrors/updates/latest because it is outdated
-debug: Linking /root/mirrors/updates/latest to 5-19-2013
-```
+What's missing
+--------------
+
+* Better logging (currently console-only)
+* Thread cleanup on exit, signal trapping
