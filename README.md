@@ -31,13 +31,11 @@ How to use it
 -------------
 
 ### Specify some *.repo file paths to load repositories from:
-
 ```python
 pakrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
 ```
 
 ### Load from a repos.d directory
-
 You can pass in multiple directories to load:
 
 ```python
@@ -46,7 +44,6 @@ sync('/root/mirrors', repodirs=['/root/yumrepos'])
 ```
 
 ### Inline repositories using `repo()`
-
 ```python
 from pakrat import repo, sync
 sync('/root/mirrors', repos=[
@@ -57,7 +54,6 @@ sync('/root/mirrors', repos=[
 ```
 
 ### Mix and Match
-
 Keep in mind that you can mix all 3 of the above input types. You can have
 repository directories, files, and in-line definitions all working together
 additively.
@@ -73,7 +69,6 @@ sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles=repo_fil
 ```
 
 ### Repository versioning
-
 By default, repositories will be versioned as YYYY-MM-DD. This means that if a
 repository is synced more than once per day, it will overwrite any existing
 packages from previous runs that day. You can create any versioning scheme you
@@ -81,13 +76,11 @@ like though, by passing in the version rather than letting Pakrat do it for you.
 Below is an example using a unix timestamp instead of the default:
 
 Library:
-
 ```python
 pakrat.sync('...', baseurls=[...], repoversion=int(time.time()))
 ```
 
 CLI:
-
 ```
 pakrat --dest ... --repofile ... --repoversion `date +%s`
 ```
