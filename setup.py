@@ -1,4 +1,22 @@
+import sys
 from setuptools import setup
+
+def required_module(module):
+    try:
+        __import__(module)
+        return True
+    except:
+        print '\n'.join([
+            'The "%s" module is required, but is not currently installed.\n' % module,
+            'Normally, this could be installed automatically, but since the',
+            'upstream source does not contain any setup.py file, automatic',
+            'installation is not possible.\n',
+            'Please install the module by your own means and try again.'
+        ])
+        sys.exit(1)
+
+required_module('yum')
+required_module('createrepo')
 
 setup(name='pakrat',
     version='0.0.6',
@@ -8,5 +26,6 @@ setup(name='pakrat',
     url='https://github.com/ryanuber/pakrat',
     packages=['pakrat'],
     scripts=['bin/pakrat'],
+    install_requires=['multiprocessing'],
     package_data={'pakrat': ['LICENSE', 'README.md']}
 )
