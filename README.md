@@ -24,6 +24,8 @@ Features
   new data created is the repodata (usually a few Mb)
 * Threaded downloading and repo creation
 * CLI provides easy interface for use by CRON or similar scheduler
+* Supports multiple baseurls
+* Supports mirrorlists
 
 How to use it
 -------------
