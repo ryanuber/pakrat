@@ -43,7 +43,7 @@ from pakrat import sync
 sync('/root/mirrors', repodirs=['/root/yumrepos'])
 ```
 
-### Direct Python library calls
+### Inline repositories using `repo()`
 
 ```python
 from pakrat import repo, sync
