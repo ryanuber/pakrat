@@ -27,6 +27,27 @@ Features
 * Supports multiple baseurls
 * Supports mirrorlists
 
+Installation
+------------
+
+Pakrat is available in PyPI as `pakrat`. That means you can install it with
+easy_install:
+
+```
+# easy_install pakrat
+```
+
+*NOTE*
+Installation from PyPI should work on any Linux. However, since Pakrat depends
+on YUM and Createrepo, which are not available in PyPI, these dependencies will
+not be detected as missing. The easiest install path is to install on some kind
+of RHEL like so:
+
+```
+# yum -y install createrepo
+# easy_install pakrat
+```
+
 How to use it
 -------------
 
@@ -110,3 +131,4 @@ What's missing
 
 * Better logging (currently console-only)
 * Thread cleanup on exit, signal trapping
+* RPM .spec file
