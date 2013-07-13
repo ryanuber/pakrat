@@ -1,8 +1,13 @@
-from distutils.core import setup
-
-with open('README.md') as file:
-    long_description = file.read()
+from setuptools import setup
 
 setup(name='pakrat',
-      long_description=long_description,
-      scripts='bin/pakrat')
+    version='0.0.6',
+    description='A Python library for mirroring and versioning YUM repositories',
+    author='Ryan Uber',
+    author_email='ru@ryanuber.com',
+    url='https://github.com/ryanuber/pakrat',
+    install_requires=['multiprocessing'],
+    packages=['pakrat'],
+    scripts=['bin/pakrat'],
+    package_data={'pakrat': ['LICENSE', 'README.md']}
+)
