@@ -1,8 +1,11 @@
+import os
+import sys
 import multiprocessing
 import subprocess
+import signal
 from pakrat import util, log, repotools
 
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 
 def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
     util.validate_basedir(basedir)
@@ -27,6 +30,14 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
         p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion))
         p.start()
         processes.append(p)
+
+    def cleanup(*args):
+        for p in processes:
+            os.kill(p.pid, signal.SIGKILL)
+        sys.exit(1)
+
+    signal.signal(signal.SIGINT, cleanup)
+    signal.signal(signal.SIGTERM, cleanup)
 
     complete_count = 0
     while True:

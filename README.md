@@ -130,5 +130,4 @@ What's missing
 --------------
 
 * Better logging (currently console-only)
-* Thread cleanup on exit, signal trapping
 * RPM .spec file
