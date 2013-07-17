@@ -1,5 +1,5 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%define pakrat_dir %(tar -tzf %{SOURCE0} | grep '^\./pakrat-[^/]*/$')
+%define pakrat_dir %(tar -tzf %{SOURCE0} | grep '^pakrat-[^/]*/$')
 
 name: pakrat
 summary: A Python library for mirroring and versioning YUM repositories
