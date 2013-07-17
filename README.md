@@ -126,8 +126,22 @@ Options:
                         this will be the current date in format: YYYY-MM-DD
 ```
 
+Building an RPM
+---------------
+
+Pakrat can be easily packaged into an RPM.
+
+1. Download a release:
+```
+curl -o pakrat.tar.gz -L https://github.com/ryanuber/pakrat/archive/master.tar.gz
+```
+
+2. Build it into an RPM:
+```
+rpmbuild -tb pakrat.tar.gz
+```
+
 What's missing
 --------------
 
 * Better logging (currently console-only)
-* RPM .spec file
