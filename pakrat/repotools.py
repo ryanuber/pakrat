@@ -35,10 +35,10 @@ def set_path(repo, path):
     repo.pkgdir = path
     return repo
 
-def create_metadata(sourcedir, destdir, packages=None):
+def create_metadata(_dir, packages=None):
     conf = createrepo.MetaDataConfig()
-    conf.directory = sourcedir
-    conf.outputdir = destdir
+    conf.directory = _dir
+    conf.outputdir = _dir
     conf.pkglist = packages
     conf.quiet = True
     generator = createrepo.SplitMetaDataGenerator(conf)

@@ -21,9 +21,6 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
         for dirrepo in repotools.from_dir(dir):
             repos.append(dirrepo)
 
-    if not repoversion:
-        repoversion = util.get_repo_version()
-
     processes = []
     for repo in repos:
         dest = util.get_repo_dir(basedir, repo.id)
@@ -50,9 +47,9 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
 def sync_repo(repo, dest, version):
     yb = util.get_yum()
 
+    dest_dir = util.get_versioned_dir(dest, version) if version else dest
+    util.make_dir(dest_dir)
     packages_dir = util.get_packages_dir(dest)
-    versioned_dir = util.get_versioned_dir(dest, version)
-    latest_symlink = util.get_latest_symlink_path(dest)
 
     repo = repotools.set_path(repo, packages_dir)
     yb.repos.add(repo)
@@ -66,16 +63,19 @@ def sync_repo(repo, dest, version):
     yb.downloadPkgs(packages)
     log.info('Finished downloading packages from repository %s' % repo.id)
 
-    util.make_dir(versioned_dir)
+    if version:
+    	util.symlink(util.get_packages_dir(dest_dir), util.get_relative_packages_dir())
 
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
         pkglist.append(util.get_package_relativedir(util.get_package_filename(pkg)))
-    util.symlink(util.get_packages_dir(versioned_dir), packages_dir)
-    repotools.create_metadata(versioned_dir, versioned_dir, pkglist)
+    repotools.create_metadata(dest_dir, pkglist)
+    log.info('Finished creating metadata for repository %s' % repo.id)
 
-    util.symlink(latest_symlink, version)
+    if version:
+    	latest_symlink = util.get_latest_symlink_path(dest)
+        util.symlink(latest_symlink, version)
 
 def repo(name, arch=None, baseurls=None, mirrorlist=None):
     yb = util.get_yum()

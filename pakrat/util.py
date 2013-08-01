@@ -15,22 +15,19 @@ def get_repo_dir(basedir, name):
     return '%s/%s' % (basedir, name)
 
 def get_packages_dir(repodir):
-    return '%s/packages' % repodir
+    return '%s/Packages' % repodir
+
+def get_relative_packages_dir():
+    return '../Packages'
 
 def get_package_relativedir(packagename):
-    return 'packages/%s' % packagename
+    return 'Packages/%s' % packagename
 
 def get_versioned_dir(repodir, version):
     return '%s/%s' % (repodir, version)
 
 def get_latest_symlink_path(repodir):
     return '%s/latest' % repodir
-
-def get_package_symlink_path(versioned_dir, pkg_file):
-    return '%s/%s' % (versioned_dir, pkg_file)
-
-def get_package_symlink_target(pkg_file):
-    return '../packages/%s' % pkg_file
 
 def get_package_filename(pkg):
     return '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
@@ -85,7 +82,7 @@ def validate_arch_list(arch_list):
 
 def make_dir(dir):
     if not os.path.exists(dir):
-        log.debug('Creating directory %s' % dir)
+        log.trace('Creating directory %s' % dir)
         os.makedirs(dir)
 
 def symlink(path, target):
@@ -96,8 +93,8 @@ def symlink(path, target):
         if not os.path.exists(dir):
             make_dir(dir)
     elif os.readlink(path) != target:
-        log.debug('Unlinking %s because it is outdated' % path)
+        log.trace('Unlinking %s because it is outdated' % path)
         os.unlink(path)
     if not os.path.lexists(path):
-        log.debug('Linking %s to %s' % (path, target))
+        log.trace('Linking %s to %s' % (path, target))
         os.symlink(target, path)
