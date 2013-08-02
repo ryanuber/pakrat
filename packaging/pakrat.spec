@@ -3,11 +3,12 @@
 
 name: pakrat
 summary: A Python library for mirroring and versioning YUM repositories
-version: 0.0.7
+version: 0.1.7
 release: 1%{?dist}
 buildarch: noarch
 license: MIT
 source0: %{name}.tar.gz
+buildrequires: python-setuptools-devel
 requires: yum
 requires: createrepo
 
@@ -23,18 +24,18 @@ other projects.
 %prep
 %setup -n %{pakrat_dir}
 
+%build
+%{__python} setup.py build
+
 %install
-%{__mkdir_p} %{buildroot}/%{python_sitelib}/%{name} %{buildroot}/%{_bindir}
-%{__cp} %{name}/*.py %{buildroot}/%{python_sitelib}/%{name}
-%{__cp} bin/%{name} %{buildroot}/%{_bindir}
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
 
 %clean
 rm -rf %{buildroot}
 
 %files
-%defattr(0644,root,root,0755)
-%dir %{python_sitelib}/%{name}
-%{python_sitelib}/%{name}/*.py
+%defattr(-,root,root,-)
+%{python_sitelib}/%{name}*
 %attr(0755, root, root) %{_bindir}/%{name}
 
 %changelog
