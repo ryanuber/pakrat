@@ -1,31 +1,15 @@
 Pakrat
 -------
 
-A stateless python library and CLI tool to sync and version YUM repositories
-from multiple sources
+A command-line tool to mirror YUM repositories with versioning
 
 What does it do?
 ----------------
 
-* You invoke pakrat and pass in a few YUM repos (see below for how to do
-  this)
-* Pakrat fetches all packages found in the repositories you specified and saves
-  them into a shared `packages` directory.
-* Pakrat uses the `createrepo` library to compile metadata about the packages
-  that were downloaded and saves it into a versioned directory (see explanation
-  below)
-* You expose the top-level directory with any HTTP server, and you now have
-  access to versioned YUM repositories!
-
-Features
--------
-
-* Data deduplication by using a common packages directory. Each run, the only
-  new data created is the repodata (usually a few Mb)
-* Threaded downloading and repo creation
-* CLI provides easy interface for use by CRON or similar scheduler
-* Supports multiple baseurls
-* Supports mirrorlists
+* You invoke pakrat and pass it some repository baseurl's or the path
+  to some YUM configurations
+* Pakrat mirrors the YUM repositories, and optionally arranges the
+  data in a versioned manner.
 
 Installation
 ------------
@@ -51,79 +35,59 @@ of RHEL like so:
 How to use it
 -------------
 
-### Specify some *.repo file paths to load repositories from:
-```python
-pakrat.sync('/root/mirrors', repofiles=['/root/yumrepos/CentOS-Base.repo'])
-```
-
-### Load from a repos.d directory
-You can pass in multiple directories to load:
-
-```python
-from pakrat import sync
-sync('/root/mirrors', repodirs=['/root/yumrepos'])
-```
-
-### Inline repositories using `repo()`
-```python
-from pakrat import repo, sync
-sync('/root/mirrors', repos=[
-    repo('base', baseurls=['http://mirror.centos.org/centos/6/os/x86_64']),
-    repo('updates', baseurls=['http://mirror.centos.org/centos/6/updates/x86_64']),
-    repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
-])
-```
-
-### Mix and Match
-Keep in mind that you can mix all 3 of the above input types. You can have
-repository directories, files, and in-line definitions all working together
-additively.
-
-```python
-from pakrat import repo, sync
-inline_repos = [
-    repo('epel', baseurls=['http://dl.fedoraproject.org/pub/epel/6/x86_64'])
-]
-repo_dirs = [ '/etc/yum.repos.d' ]
-repo_files = [ '/root/my-yum-repo.conf' ]
-sync('/root/mirrors', repos=inline_repos, repodirs=repo_dirs, repofiles=repo_files)
-```
-
-### Repository versioning
-By default, repositories will be versioned as YYYY-MM-DD. This means that if a
-repository is synced more than once per day, it will overwrite any existing
-packages from previous runs that day. You can create any versioning scheme you
-like though, by passing in the version rather than letting Pakrat do it for you.
-Below is an example using a unix timestamp instead of the default:
-
-Library:
-```python
-pakrat.sync('...', baseurls=[...], repoversion=int(time.time()))
-```
-
-CLI:
-```
-pakrat --dest ... --repofile ... --repoversion `date +%s`
-```
-
-CLI interface
--------------
+Pakrat is mainly a command-line driven tool. The simplest possible example
+would involve mirroring a YUM repository in a very basic way:
 
 ```
-Usage: pakrat [options]
+$ pakrat http://mirror.centos.org/centos/6/os/x86_64
+$ tree -d centos
+centos
+└── 6
+    └── extras
+        └── x86_64
+            ├── Packages
+            └── repodata
+```
 
-Options:
-  --version             show program's version number and exit
-  -h, --help            show this help message and exit
-  --dest=DEST           Root destination for all YUM repositories
-  -d REPODIR, --repodir=REPODIR
-                        A "repos.d" directory of YUM configurations.
-                        (repeatable)
-  -f REPOFILE, --repofile=REPOFILE
-                        A YUM configuration file. (repeatable)
-  -r REPOVERSION, --repoversion=REPOVERSION
-                        The version of the repository to create. By default,
-                        this will be the current date in format: YYYY-MM-DD
+As you can see, you just pass it baseurls, and it mirrors them to a similar
+directory structure locally and creates the associated metadata.
+
+A slightly more complex example would be to version the same repository. To
+do this, you must pass in a version number. An easy example is to mirror a
+repository daily.
+```
+$ pakrat --repoversion $(date +%Y-%m-%d) http://mirror.centos.org/centos/6/os/x86_64
+$ tree -d centos
+centos/
+└── 6
+    └── extras
+        └── x86_64
+            ├── 2013-07-30
+            │   ├── Packages -> ../Packages
+            │   └── repodata
+            ├── latest -> 2013-07-30
+            └── Packages
+```
+
+If you were to configure the above to command to run on a daily schedule,
+eventually you would see something like:
+```
+$ tree -d centos
+centos/
+└── 6
+    └── extras
+        └── x86_64
+            ├── 2013-07-30
+            │   ├── Packages -> ../Packages
+            │   └── repodata
+            ├── 2013-07-31
+            │   ├── Packages -> ../Packages
+            │   └── repodata
+            ├── 2013-08-01
+            │   ├── Packages -> ../Packages
+            │   └── repodata
+            ├── latest -> 2013-08-01
+            └── Packages
 ```
 
 Building an RPM

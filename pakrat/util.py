@@ -1,15 +1,10 @@
 import os
-from datetime import datetime
 from pakrat.yumbase import yumbase
 from pakrat import log
 
 def get_yum():
     yb = yumbase()
     return yb
-
-def get_repo_version():
-    now = datetime.now()
-    return '%s-%s-%s' % (now.month, now.day, now.year)
 
 def get_repo_dir(basedir, name):
     return '%s/%s' % (basedir, name)
