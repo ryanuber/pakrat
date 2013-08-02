@@ -8,9 +8,8 @@ release: 1%{?dist}
 buildarch: noarch
 license: MIT
 source0: %{name}.tar.gz
-buildrequires: python-setuptools-devel
-requires: yum
-requires: createrepo
+buildrequires: yum, createrepo, python-setuptools-devel
+requires: yum, createrepo
 
 %description
 Pakrat is a Pythonic library used to mirror YUM repositories using
