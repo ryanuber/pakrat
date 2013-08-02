@@ -5,12 +5,6 @@ import os, sys
 from optparse import OptionParser
 
 parser = OptionParser(version='pakrat %s' % pakrat.__version__)
-parser.add_option('--outdir', default=os.getcwd(),
-    help='Root destination for all YUM repositories.')
-parser.add_option('-d', '--repodir', action='append', default=[],
-    help='A "repos.d" directory of YUM configurations. (repeatable)')
-parser.add_option('-f', '--repofile', action='append', default=[],
-    help='A YUM configuration file. (repeatable)')
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
 	  'repositories will not be versioned.'))
@@ -36,20 +30,9 @@ options, args = parser.parse_args(in_args['named'])
 repos = []
 if len(in_args['bare']) > 0:
     for repo_url in in_args['bare']:
-       	if '|' in repo_url and repo_url.split('|')[0] != '':
-            repo_name, repo_url = repo_url.split('|')
-        else:
-            parts = repo_url.split('/')
-            if len(parts) > 3:
-                repo_name = '_'.join(parts[3:])
-            else:
-                repo_name = parts[2]
-    repos.append(pakrat.repo(name=repo_name, baseurls=[repo_url]))
+        repos.append(pakrat.repo(name=repo_url, baseurls=[repo_url]))
 
 pakrat.sync(
-    options.outdir,
-    repofiles=options.repofile,
-    repodirs=options.repodir,
     repoversion=options.repoversion,
     repos=repos
 )

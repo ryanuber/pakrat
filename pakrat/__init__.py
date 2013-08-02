@@ -3,27 +3,18 @@ import sys
 import multiprocessing
 import subprocess
 import signal
+import urlparse
+from yum.Errors import RepoError
 from pakrat import util, log, repotools
 
 __version__ = '0.0.7'
 
-def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
-    util.validate_basedir(basedir)
+def sync(repos=[], repoversion=None):
     util.validate_repos(repos)
-    util.validate_repofiles(repofiles)
-    util.validate_repodirs(repodirs)
-
-    for file in repofiles:
-        for filerepo in repotools.from_file(file):
-            repos.append(filerepo)
-
-    for dir in repodirs:
-        for dirrepo in repotools.from_dir(dir):
-            repos.append(dirrepo)
 
     processes = []
     for repo in repos:
-        dest = util.get_repo_dir(basedir, repo.id)
+        dest = urlparse.urlsplit(repo.baseurl[0]).path.strip('/')
         p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion))
         p.start()
         processes.append(p)
@@ -45,19 +36,23 @@ def sync(basedir, repos=[], repofiles=[], repodirs=[], repoversion=None):
             break
 
 def sync_repo(repo, dest, version):
-    yb = util.get_yum()
-
-    dest_dir = util.get_versioned_dir(dest, version) if version else dest
-    util.make_dir(dest_dir)
     packages_dir = util.get_packages_dir(dest)
 
+    yb = util.get_yum()
     repo = repotools.set_path(repo, packages_dir)
     yb.repos.add(repo)
     yb.repos.enableRepo(repo.id)
 
-    packages = []
-    for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
-        packages.append(package)
+    try:
+        packages = []
+        for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
+            packages.append(package)
+    except RepoError, e:
+        log.error(e)
+        return False
+
+    dest_dir = util.get_versioned_dir(dest, version) if version else dest
+    util.make_dir(dest_dir)
 
     log.info('Syncing %d packages from repository %s' % (len(packages), repo.id))
     yb.downloadPkgs(packages)
@@ -74,7 +69,7 @@ def sync_repo(repo, dest, version):
     log.info('Finished creating metadata for repository %s' % repo.id)
 
     if version:
-    	latest_symlink = util.get_latest_symlink_path(dest)
+        latest_symlink = util.get_latest_symlink_path(dest)
         util.symlink(latest_symlink, version)
 
 def repo(name, arch=None, baseurls=None, mirrorlist=None):
