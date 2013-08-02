@@ -9,6 +9,9 @@ parser = OptionParser(version='pakrat %s' % pakrat.__version__,
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
 	  'repositories will not be versioned.'))
+parser.add_option('--delete', action='store_true', default=False,
+    help=('Delete packages that are no longer at the remote source. '
+          'This option does nothing if --repoversion is passed.'))
 
 in_args = {'named':[], 'bare':[]}
 append_next = False
@@ -35,5 +38,6 @@ if len(in_args['bare']) > 0:
 
 pakrat.sync(
     repoversion=options.repoversion,
-    repos=repos
+    repos=repos,
+    delete=options.delete
 )

@@ -12,6 +12,9 @@ def get_repo_dir(basedir, name):
 def get_packages_dir(repodir):
     return '%s/Packages' % repodir
 
+def get_package_path(repodir, packagename):
+    return '%s/Packages/%s' % (repodir, packagename)
+
 def get_relative_packages_dir():
     return '../Packages'
 

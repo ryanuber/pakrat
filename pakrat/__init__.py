@@ -9,13 +9,16 @@ from pakrat import util, log, repotools
 
 __version__ = '0.0.7'
 
-def sync(repos=[], repoversion=None):
+def sync(repos=[], repoversion=None, delete=True):
+    if repoversion:
+        delete = False
+
     util.validate_repos(repos)
 
     processes = []
     for repo in repos:
         dest = urlparse.urlsplit(repo.baseurl[0]).path.strip('/')
-        p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion))
+        p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion, delete))
         p.start()
         processes.append(p)
 
@@ -35,7 +38,7 @@ def sync(repos=[], repoversion=None):
         if complete_count == len(processes):
             break
 
-def sync_repo(repo, dest, version):
+def sync_repo(repo, dest, version, delete):
     try:
         packages_dir = util.get_packages_dir(dest)
         yb = util.get_yum()
@@ -54,6 +57,15 @@ def sync_repo(repo, dest, version):
 
     log.info('Syncing %d packages from repository %s' % (len(packages), repo.id))
     yb.downloadPkgs(packages)
+    if delete:
+        package_names = []
+        for package in packages:
+            package_names.append(util.get_package_filename(package))
+        for _file in os.listdir(util.get_packages_dir(dest)):
+            if not _file in package_names:
+                package_path = util.get_package_path(dest, _file)
+                log.debug('Deleting file %s' % package_path)
+                os.remove(package_path)
     log.info('Finished downloading packages from repository %s' % repo.id)
 
     if version:
