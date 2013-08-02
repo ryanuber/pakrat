@@ -36,14 +36,12 @@ def sync(repos=[], repoversion=None):
             break
 
 def sync_repo(repo, dest, version):
-    packages_dir = util.get_packages_dir(dest)
-
-    yb = util.get_yum()
-    repo = repotools.set_path(repo, packages_dir)
-    yb.repos.add(repo)
-    yb.repos.enableRepo(repo.id)
-
     try:
+        packages_dir = util.get_packages_dir(dest)
+        yb = util.get_yum()
+        repo = repotools.set_path(repo, packages_dir)
+        yb.repos.add(repo)
+        yb.repos.enableRepo(repo.id)
         packages = []
         for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
             packages.append(package)
