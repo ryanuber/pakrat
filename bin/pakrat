@@ -4,7 +4,8 @@ import pakrat
 import os, sys
 from optparse import OptionParser
 
-parser = OptionParser(version='pakrat %s' % pakrat.__version__)
+parser = OptionParser(version='pakrat %s' % pakrat.__version__,
+    usage=('usage: %prog [options] baseurl [baseurl] ...'))
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
 	  'repositories will not be versioned.'))
