@@ -109,3 +109,9 @@ What's missing
 --------------
 
 * Better logging (currently console-only)
+
+Thanks
+------
+
+Thanks to [Keith Chambers](https://github.com/keithchambers) for help with the ideas
+and useful input on CLI design.
