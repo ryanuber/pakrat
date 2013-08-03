@@ -39,34 +39,28 @@ Pakrat is mainly a command-line driven tool. The simplest possible example
 would involve mirroring a YUM repository in a very basic way:
 
 ```
-$ pakrat http://mirror.centos.org/centos/6/os/x86_64
+$ pakrat --name centos --url http://mirror.centos.org/centos/6/os/x86_64
 $ tree -d centos
-centos
-└── 6
-    └── extras
-        └── x86_64
-            ├── Packages
-            └── repodata
+centos/
+├── Packages
+└── repodata
 ```
-
-As you can see, you just pass it baseurls, and it mirrors them to a similar
-directory structure locally and creates the associated metadata.
 
 A slightly more complex example would be to version the same repository. To
 do this, you must pass in a version number. An easy example is to mirror a
 repository daily.
 ```
-$ pakrat --repoversion $(date +%Y-%m-%d) http://mirror.centos.org/centos/6/os/x86_64
+$ pakrat \
+    --repoversion $(date +%Y-%m-%d) \
+    --name centos \
+    --url http://mirror.centos.org/centos/6/os/x86_64
 $ tree -d centos
 centos/
-└── 6
-    └── extras
-        └── x86_64
-            ├── 2013-07-30
-            │   ├── Packages -> ../Packages
-            │   └── repodata
-            ├── latest -> 2013-07-30
-            └── Packages
+├── 2013-07-29
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── latest -> 2013-07-29
+└── Packages
 ```
 
 If you were to configure the above to command to run on a daily schedule,
@@ -74,21 +68,47 @@ eventually you would see something like:
 ```
 $ tree -d centos
 centos/
-└── 6
-    └── extras
-        └── x86_64
-            ├── 2013-07-30
-            │   ├── Packages -> ../Packages
-            │   └── repodata
-            ├── 2013-07-31
-            │   ├── Packages -> ../Packages
-            │   └── repodata
-            ├── 2013-08-01
-            │   ├── Packages -> ../Packages
-            │   └── repodata
-            ├── latest -> 2013-08-01
-            └── Packages
+├── 2013-07-29
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── 2013-07-30
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── 2013-07-31
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── latest -> 2013-07-31
+└── Packages
 ```
+
+Pakrat is also capable of handling multiple YUM repositories in the same mirror
+run. If multiple repositories are specified, each repository will get its own
+download thread. This is handy if you are syncing from a mirror that is not
+particularly quick. The other repositories do not need to wait on it to finish.
+```
+$ pakrat \
+    --repoversion $(date +%Y-%m-%d) \
+    --name centos \
+    --url http://mirror.centos.org/centos/6/os/x86_64 \
+    --name epel \
+    --url http://dl.fedoraproject.org/pub/epel/6/x86_64
+$ tree -d centos epel
+centos/
+├── 2013-07-29
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── latest -> 2013-07-29
+└── Packages
+epel/
+├── 2013-07-29
+│   ├── Packages -> ../Packages
+│   └── repodata
+├── latest -> 2013-07-29
+└── Packages
+```
+
+Configuration can also be passed in from YUM configuration files. See the CLI
+`--help` for details.
 
 Building an RPM
 ---------------
