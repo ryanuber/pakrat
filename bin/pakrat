@@ -4,35 +4,48 @@ import pakrat
 import os, sys
 from optparse import OptionParser
 
-parser = OptionParser(version='pakrat %s' % pakrat.__version__)
+parser = OptionParser(version='pakrat %s' % pakrat.__version__,
+    usage='\n'.join([
+        'pakrat [options]\n',
+        'Repositories are declared using two options: name and',
+        'url. The "--name" and "--url" options may be repeated',
+        'to declare multiple repositories. Repository names and',
+        'URLs are matched up according to their position on the',
+        'command line.'
+    ]))
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
 	  'repositories will not be versioned.'))
+parser.add_option('--name', action='append',
+    help='The name of a YUM repository. (repeatable)') 
+parser.add_option('--url', action='append',
+    help='The source URL to a repository (repeatable)')
+parser.add_option('--outdir', type='string', default=os.getcwd(),
+    help='The root output directory to store repository data. Default '
+         'is the current working directory.')
+parser.add_option('--repofile', default=[], action='append',
+    help=('The path to a YUM repository configuration file. '
+         '(repeatable)'))
+parser.add_option('--repodir', default=[], action='append',
+    help=('The path to a YUM repos.d-style directory of configs '
+          '(repeatable)'))
 
-in_args = {'named':[], 'bare':[]}
-append_next = False
-for option in sys.argv[1:]:
-    if append_next:
-        in_args['named'].append(option)
-        append_next = False
-        continue
-    if option.startswith('-'):
-        in_args['named'].append(option)
-        append_next = True
-    else:
-        in_args['bare'].append(option)
-
-if len(in_args['named']) == 0 and len(in_args['bare']) == 0:
-    parser.print_help()
-
-options, args = parser.parse_args(in_args['named'])
+options, args = parser.parse_args()
 
 repos = []
-if len(in_args['bare']) > 0:
-    for repo_url in in_args['bare']:
-        repos.append(pakrat.repo(name=repo_url, baseurls=[repo_url]))
+
+if options.name and options.url:
+    if len(options.name) != len(options.url):
+        print 'Each repository must have a name and URL.'
+        sys.exit(1)
+    for repo in zip(options.name, options.url):
+        name, url = repo
+        repos.append(pakrat.repo(name=name, baseurls=[url]))
 
 pakrat.sync(
+    basedir=options.outdir,
     repoversion=options.repoversion,
-    repos=repos
+    repos=repos,
+    repofiles=options.repofile,
+    repodirs=options.repodir
 )

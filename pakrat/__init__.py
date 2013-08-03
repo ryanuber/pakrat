@@ -9,12 +9,24 @@ from pakrat import util, log, repotools
 
 __version__ = '0.0.7'
 
-def sync(repos=[], repoversion=None):
+def sync(basedir, repos=[], repodirs=[], repofiles=[], repoversion=None):
+    util.validate_basedir(basedir)
     util.validate_repos(repos)
+    util.validate_repofiles(repofiles)
+    util.validate_repodirs(repodirs)
+    util.validate_repos(repos)
+
+    for file in repofiles:
+        for filerepo in repotools.from_file(file):
+            repos.append(filerepo)
+
+    for dir in repodirs:
+        for dirrepo in repotools.from_dir(dir):
+            repos.append(dirrepo)
 
     processes = []
     for repo in repos:
-        dest = urlparse.urlsplit(repo.baseurl[0]).path.strip('/')
+        dest = util.get_repo_dir(basedir, repo.id)
         p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion))
         p.start()
         processes.append(p)
