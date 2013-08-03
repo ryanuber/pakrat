@@ -9,15 +9,27 @@ from pakrat import util, log, repotools
 
 __version__ = '0.0.7'
 
-def sync(repos=[], repoversion=None, delete=True):
+def sync(basedir, repos=[], repodirs=[], repofiles=[], repoversion=None, delete=False):
+    util.validate_basedir(basedir)
+    util.validate_repos(repos)
+    util.validate_repofiles(repofiles)
+    util.validate_repodirs(repodirs)
+    util.validate_repos(repos)
+
     if repoversion:
         delete = False
 
-    util.validate_repos(repos)
+    for file in repofiles:
+        for filerepo in repotools.from_file(file):
+            repos.append(filerepo)
+
+    for dir in repodirs:
+        for dirrepo in repotools.from_dir(dir):
+            repos.append(dirrepo)
 
     processes = []
     for repo in repos:
-        dest = urlparse.urlsplit(repo.baseurl[0]).path.strip('/')
+        dest = util.get_repo_dir(basedir, repo.id)
         p = multiprocessing.Process(target=sync_repo, args=(repo, dest, repoversion, delete))
         p.start()
         processes.append(p)
@@ -38,7 +50,7 @@ def sync(repos=[], repoversion=None, delete=True):
         if complete_count == len(processes):
             break
 
-def sync_repo(repo, dest, version, delete):
+def sync_repo(repo, dest, version, delete=False):
     try:
         packages_dir = util.get_packages_dir(dest)
         yb = util.get_yum()
