@@ -57,9 +57,8 @@ def sync_repo(repo, dest, version, delete=False):
         repo = repotools.set_path(repo, packages_dir)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
-        packages = []
-        for package in yb.doPackageLists(pkgnarrow='available', showdups=False):
-            packages.append(package)
+        ygh = yb.doPackageLists(showdups=True)
+        packages = ygh.available + ygh.reinstall_available
     except RepoError, e:
         log.error(e)
         return False
