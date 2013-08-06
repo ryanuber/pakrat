@@ -43,7 +43,7 @@ if options.name and options.url:
         sys.exit(1)
     for repo in zip(options.name, options.url):
         name, url = repo
-        repos.append(pakrat.repo(name=name, baseurls=[url]))
+        repos.append(pakrat.repo.factory(name=name, baseurls=[url]))
 
 if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
@@ -52,7 +52,7 @@ if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
 pakrat.sync(
     basedir=options.outdir,
     repoversion=options.repoversion,
-    repos=repos,
+    objrepos=repos,
     repofiles=options.repofile,
     repodirs=options.repodir,
     delete=options.delete

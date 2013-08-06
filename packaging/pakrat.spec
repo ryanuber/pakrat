@@ -3,7 +3,7 @@
 
 name: pakrat
 summary: A Python library for mirroring and versioning YUM repositories
-version: 0.2.1
+version: 0.2.2
 release: 1%{?dist}
 buildarch: noarch
 license: MIT
