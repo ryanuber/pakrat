@@ -23,6 +23,7 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
+import yum
 from pakrat.yumbase import YumBase
 from pakrat import log
 
@@ -75,7 +76,6 @@ def get_latest_symlink_path(repodir):
 
 def get_package_filename(pkg):
     """ From a repository object, return the name of the RPM file. """
-    validate_pkg(pkg)
     return '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
 
 def validate_basedir(basedir):
@@ -118,7 +118,7 @@ def validate_mirrorlist(mirrorlist):
 def validate_repo(repo):
     """ Validate a repository object. """
     if type(repo) is not yum.yumRepo.YumRepository:
-        raise Exception('Repo %s is not a YumRepository instance' % repo.id)
+        raise Exception('repo must be a YumRepository, not "%s"' % type(repo))
 
 def validate_repos(repos):
     """ Validate repository objects. """
@@ -155,11 +155,6 @@ def validate_repodirs(repodirs):
         raise Exception('repodirs must be a list, not "%s"' % type(repodirs))
     for repodir in repodirs:
         validate_repodir(repodir)
-
-def validate_pkg(pkg):
-    """ Validate a package object """
-    if type(pkg) is not yum.yumRepo.YumRepository:
-        raise Exception('Expected package object, not "%s"' % type(pkg))
 
 def make_dir(dir):
     """ Create a directory recursively, if it does not exist. """

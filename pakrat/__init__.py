@@ -43,7 +43,6 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     util.validate_repos(objrepos)
     util.validate_repofiles(repofiles)
     util.validate_repodirs(repodirs)
-    util.validate_repos(objrepos)
 
     if repoversion:
         delete = False  # versioned repos have nothing to delete

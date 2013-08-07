@@ -114,10 +114,8 @@ def sync(repo, dest, version, delete=False):
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
-        pkglist.append(
-            util.get_package_relativedir(util.get_package_filename(pkg))
-        )
-    create_metadata(dest_dir, pkglist)
+        pkglist.append(util.get_package_filename(pkg))
+    create_metadata(repo, pkglist)
     log.info('Finished creating metadata for repository %s' % repo.id)
 
     if version:

@@ -22,15 +22,13 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
-
 def write(message):
     """ Record a log message.
 
     This should have a way of reading or accepting the logging level, but I have
     not yet found a good way of doing this without introducing state.
     """
-    sys.stdout.write message
+    print message
 
 def debug(message):
     """ Record a debugging message. """
