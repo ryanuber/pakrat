@@ -80,6 +80,7 @@ def sync(repo, dest, version, delete=False):
     If the delete flag is passed, any packages found on the local filesystem
     which are not present in the remote repository will be deleted.
     """
+    util.make_dir(util.get_packages_dir(dest))  # Make package storage dir
     if version:
         dest_dir = util.get_versioned_dir(dest, version)
         util.make_dir(dest_dir)
@@ -87,7 +88,6 @@ def sync(repo, dest, version, delete=False):
     	util.symlink(packages_dir, util.get_relative_packages_dir())
     else:
         dest_dir = dest
-        util.make_dir(dest_dir)
         packages_dir = util.get_packages_dir(dest_dir)
     try:
         yb = util.get_yum()
