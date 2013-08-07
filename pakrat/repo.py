@@ -60,8 +60,8 @@ def create_metadata(repo, packages=None):
     """
     util.validate_repo(repo)
     conf = createrepo.MetaDataConfig()
-    conf.directory = repo.pkgdir
-    conf.outputdir = repo.pkgdir
+    conf.directory = os.path.dirname(repo.pkgdir)
+    conf.outputdir = os.path.dirname(repo.pkgdir)
     conf.pkglist = packages
     conf.quiet = True
     generator = createrepo.SplitMetaDataGenerator(conf)
@@ -114,7 +114,9 @@ def sync(repo, dest, version, delete=False):
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
-        pkglist.append(util.get_package_filename(pkg))
+        pkglist.append(
+            util.get_package_relativedir(util.get_package_filename(pkg))
+        )
     create_metadata(repo, pkglist)
     log.info('Finished creating metadata for repository %s' % repo.id)
 
