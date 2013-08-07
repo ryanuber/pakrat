@@ -49,7 +49,10 @@ def factory(name, baseurls=None, mirrorlist=None):
 def set_path(repo, path):
     """ Set the local filesystem path to use for a repository object. """
     util.validate_repo(repo)
-    repo.pkgdir = path
+    # The following is wrapped in a try-except to suppress an anticipated
+    # exception from YUM's yumRepo.py, line 530 and 557.
+    try: repo.pkgdir = path
+    except yum.Errors.RepoError: pass
     return repo
 
 def create_metadata(repo, packages=None):
@@ -77,8 +80,16 @@ def sync(repo, dest, version, delete=False):
     If the delete flag is passed, any packages found on the local filesystem
     which are not present in the remote repository will be deleted.
     """
+    if version:
+        dest_dir = util.get_versioned_dir(dest, version)
+        util.make_dir(dest_dir)
+        packages_dir = util.get_packages_dir(dest_dir)
+    	util.symlink(packages_dir, util.get_relative_packages_dir())
+    else:
+        dest_dir = dest
+        util.make_dir(dest_dir)
+        packages_dir = util.get_packages_dir(dest_dir)
     try:
-        packages_dir = util.get_packages_dir(dest)
         yb = util.get_yum()
         repo = set_path(repo, packages_dir)
         yb.repos.add(repo)
@@ -89,10 +100,6 @@ def sync(repo, dest, version, delete=False):
     except yum.Errors.RepoError, e:
         log.error(e)
         return False
-
-    dest_dir = util.get_versioned_dir(dest, version) if version else dest
-    util.make_dir(dest_dir)
-
     log.info('Downloading %d packages from repository %s' % (len(packages),
              repo.id))
     yb.downloadPkgs(packages)
@@ -106,11 +113,6 @@ def sync(repo, dest, version, delete=False):
                 log.debug('Deleting file %s' % package_path)
                 os.remove(package_path)
     log.info('Finished downloading packages from repository %s' % repo.id)
-
-    if version:
-    	util.symlink(util.get_packages_dir(dest_dir),
-                     util.get_relative_packages_dir())
-
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
@@ -119,7 +121,6 @@ def sync(repo, dest, version, delete=False):
         )
     create_metadata(repo, pkglist)
     log.info('Finished creating metadata for repository %s' % repo.id)
-
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)
         util.symlink(latest_symlink, version)
