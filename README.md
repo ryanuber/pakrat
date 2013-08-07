@@ -129,6 +129,8 @@ What's missing
 --------------
 
 * Better logging (currently console-only)
+* Optional "all" repository containing all known versions
+* Combined repositories?
 
 Thanks
 ------
