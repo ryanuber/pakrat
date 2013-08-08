@@ -29,7 +29,7 @@ import signal
 import urlparse
 from pakrat import util, log, repo, repos
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
          delete=False):
@@ -47,13 +47,11 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     if repoversion:
         delete = False  # versioned repos have nothing to delete
 
-    for file in repofiles:
-        for filerepo in repos.from_file(file):
-            objrepos.append(filerepo)
+    for _file in repofiles:
+        objrepos += repos.from_file(_file)
 
-    for dir in repodirs:
-        for dirrepo in repos.from_dir(dir):
-            objrepos.append(dirrepo)
+    for _dir in repodirs:
+        objrepos += repos.from_dir(_dir)
 
     processes = []
     for objrepo in objrepos:
@@ -63,21 +61,26 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
         p.start()
         processes.append(p)
 
-    def cleanup(*args):
-        """ Inner method for cleaning up threads. """
-        for p in processes:
-            os.kill(p.pid, signal.SIGKILL)
+    def stop(*args):
+        """ Inner method for terminating threads on signal events.
+
+        This method uses os.kill() to send a SIGKILL directly to the process ID
+        because the child processes are running blocking calls that will likely
+        take a long time to complete.
+        """
+        log.error('Caught exit signal - aborting')
+        while len(processes) > 0:
+            for p in processes:
+                os.kill(p.pid, signal.SIGKILL)
+                if not p.is_alive():
+                    processes.remove(p)
         sys.exit(1)
 
-    # Catch user-cancelled or killed signals to clean up threads.  This doesn't
-    # work great and probably needs to be replaced by some real thread pooling.
-    signal.signal(signal.SIGINT, cleanup)
-    signal.signal(signal.SIGTERM, cleanup)
+    # Catch user-cancelled or killed signals to terminate threads.
+    signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGTERM, stop)
 
-    complete_count = 0
-    while True:
+    while len(processes) > 0:
         for p in processes:
             if not p.is_alive():
-                complete_count += 1
-        if complete_count == len(processes):
-            break
+                processes.remove(p)

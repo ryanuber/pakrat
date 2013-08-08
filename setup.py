@@ -38,11 +38,8 @@ def required_module(module):
         return True
     except:
         print '\n'.join([
-            'The "%s" module is required, but is not currently installed.\n' % module,
-            'Normally, this could be installed automatically, but since the',
-            'upstream source does not contain any setup.py file, automatic',
-            'installation is not possible.\n',
-            'Please install the module by your own means and try again.'
+            'The "%s" module is required, but was not found.' % module,
+            'Please install the module and try again.'
         ])
         sys.exit(1)
 
@@ -50,7 +47,7 @@ required_module('yum')
 required_module('createrepo')
 
 setup(name='pakrat',
-    version='0.2.2',
+    version='0.2.3',
     description='A Python library for mirroring and versioning YUM repositories',
     author='Ryan Uber',
     author_email='ru@ryanuber.com',
