@@ -24,7 +24,6 @@
 
 import os
 import yum
-from pakrat.yumbase import YumBase
 from pakrat import log
 
 PACKAGESDIR = 'Packages'
@@ -32,7 +31,13 @@ LATESTREPO = 'latest'
 
 def get_yum():
     """ Retrieve a YumBase object, pre-configured. """
-    return YumBase()
+    yb = yum.YumBase()
+    yb.preconf = yum._YumPreBaseConf()
+    yb.preconf.debuglevel = 0
+    yb.prerepoconf = yum._YumPreRepoConf()
+    yb.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
+    yb.repos.repos = {}
+    return yb
 
 def get_repo_dir(basedir, name):
     """ Return the path to a repository directory.
