@@ -71,7 +71,7 @@ def create_metadata(repo, packages=None):
     generator.doRepoMetadata()
     generator.doFinalMove()
 
-def sync(repo, dest, version, delete=False):
+def sync(repo, dest, version=None, delete=False):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -90,7 +90,7 @@ def sync(repo, dest, version, delete=False):
         packages_dir = util.get_packages_dir(dest_dir)
     try:
         yb = util.get_yum()
-        repo = set_path(repo, packages_dir)
+        set_path(repo, packages_dir)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
         # showdups allows us to get multiple versions of the same package.
@@ -118,6 +118,7 @@ def sync(repo, dest, version, delete=False):
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
+    print pkglist
     create_metadata(repo, pkglist)
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:

@@ -2,12 +2,23 @@ import sys
 from flexmock import flexmock
 from nose.tools import *
 
+# Built-ins that modify system state should be mocked
+mock = flexmock(sys.modules['os'])
+mock.should_receive('makedirs').replace_with(lambda *args, **kwargs: True)
+mock.should_receive('symlink').replace_with(lambda *args, **kwargs: True)
+
 # Inner mocks help us mock objects that are returned by mocked modules in a way
 # we can obtain call counts and return values from them.
 mocks = {}
 
 # Mock YUM module
 yum = flexmock()
+yumpkg = lambda name, version, release, arch: flexmock(
+    name=name,
+    version=version,
+    release=release,
+    arch=arch
+)
 yum._YumPreBaseConf = flexmock()
 yum._YumPreRepoConf = flexmock()
 yum.misc = flexmock(
@@ -20,15 +31,28 @@ yum.YumBase = flexmock(
         pkgdir='/pkgdir'
     ),
     setCacheDir=lambda **kwargs: True,
-    repos=flexmock()
-)
-yum.repos = flexmock(
-    add=lambda: True
+    doPackageLists=lambda *args, **kwargs: flexmock(
+        available=[
+            yumpkg('pakrat', '0.2.3', '1.el6', 'noarch')
+        ],
+        reinstall_available=[
+            yumpkg('kernel', '2.6.32', '128-9.el6', 'x86_64'),
+            yumpkg('grub', '0.99', '1.el6', 'x86_64')
+        ]
+    ),
+    downloadPkgs=lambda packages: True,
+    repos=flexmock(
+        repos={},
+        add=lambda *args, **kwargs: True,
+        enableRepo=lambda *args, **kwargs: True
+    )
 )
 yum.yumRepo = flexmock()
 yum.yumRepo.YumRepository = flexmock(
     pkgdir='/pkgdir'
 )
+yum.Errors = flexmock()
+yum.Errors.RepoError = flexmock()
 sys.modules['yum'] = yum
 
 # Mock createrepo module
@@ -53,10 +77,10 @@ class test_repo_factory:
 
     def test_with_baseurl(self):
         #(yum.YumBase
-        #    .should_receive('add_enable_repo')
-        #    .with_args('repo1', baseurls=['http://url1'])
-        #    .and_return(True)
-        #    .times(1))
+            #.should_receive('add_enable_repo')
+            #.once
+            #.with_args('repo1', baseurls=['http://url1'])
+            #.and_return(flexmock))
         repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
         assert_equals(repo.id, 'repo1')
         assert_equals(len(repo.baseurls), 1)
@@ -92,7 +116,7 @@ class test_repo_factory:
 class test_set_repo_path:
 
     def test_set_repo_path(self):
-        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
         pkgdir_before = repo.pkgdir
         pakrat.repo.set_path(repo, '/newdir')
         pkgdir_after = repo.pkgdir
@@ -108,8 +132,11 @@ class test_create_metadata:
             .should_receive('doRepoMetadata').times(1))
         (mocks['createrepo.SplitMetaDataGenerator']
             .should_receive('doFinalMove').times(1))
-        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
         pakrat.repo.create_metadata(repo)
 
-#setup()
-#test_create_metadata().test_create_metadata()
+class test_sync_repo:
+
+    def test_sync_repo(self):
+        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        pakrat.repo.sync(repo, '/tmp/pakrat')
