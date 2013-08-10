@@ -6,26 +6,30 @@ from flexmock import flexmock
 from nose.tools import *
 
 # Mock YUM module
-yum = flexmock()
-yumpkg = lambda name, version, release, arch: flexmock(
-    name=name,
-    version=version,
-    release=release,
-    arch=arch
-)
-yum._YumPreBaseConf = flexmock()
-yum._YumPreRepoConf = flexmock()
-yum.misc = flexmock(
-    getCacheDir=lambda: '/tmp/pakrat'
-)
-yum.YumBase = flexmock(
-    add_enable_repo=lambda *args, **kwargs: flexmock(
-        id=args[0],
-        baseurls=kwargs['baseurls'] if kwargs.has_key('baseurls') else None,
-        pkgdir='/pkgdir'
-    ),
-    setCacheDir=lambda **kwargs: True,
-    doPackageLists=lambda *args, **kwargs: flexmock(
+repos = []
+
+def reset_repos():
+    global repos
+    repos = []
+
+def yumrepo(id, baseurls=[], mirrorlist=None):
+    def getAttribute(attr):
+        if attr == 'name':
+            return id
+    return flexmock(
+        id=id,
+        baseurls=baseurls,
+        mirrorlist=mirrorlist,
+        pkgdir='/pkgdir',
+        getAttribute=lambda attr: getAttribute(attr),
+        isEnabled=lambda: True
+    )
+
+def yumpkg(name, version, release, arch):
+    return flexmock(name=name, version=version, release=release, arch=arch)
+
+def yum_YumBase_doPackageLists(*args, **kwargs):
+    return flexmock(
         available=[
             yumpkg('pakrat', '0.2.3', '1.el6', 'noarch')
         ],
@@ -33,17 +37,52 @@ yum.YumBase = flexmock(
             yumpkg('kernel', '2.6.32', '128-9.el6', 'x86_64'),
             yumpkg('grub', '0.99', '1.el6', 'x86_64')
         ]
-    ),
+    )
+
+def yum_YumBase_add_enable_repo(name, baseurls=[], mirrorlist=None):
+    repo = yumrepo(name, baseurls, mirrorlist)
+    repos.append(repo)
+    return repo
+
+def yum_YumBase_repos_add(name, baseurls=[], mirrorlist=None):
+    repos.append(yumrepo(name, baseurls, mirrorlist))
+    return True
+
+def yum_YumBase_findRepos(pattern):
+    if pattern == '*':
+        return repos
+
+def yum_YumBase_getReposFromConfigFile(path):
+    result = []
+    if os.path.exists(path):
+        for repo in open(path):
+            name, url = repo.strip().split()
+            repo = yumrepo(name, baseurls=[url])
+            repos.append(repo)
+            result.append(repo)
+    return True
+
+yum = flexmock()
+yum._YumPreBaseConf = flexmock()
+yum._YumPreRepoConf = flexmock()
+yum.misc = flexmock(
+    getCacheDir=lambda: '/tmp/pakrat'
+)
+yum.YumBase = flexmock(
+    add_enable_repo=yum_YumBase_add_enable_repo,
+    setCacheDir=lambda **kwargs: True,
+    doPackageLists=yum_YumBase_doPackageLists,
     doSackSetup=lambda *args, **kwargs: True,
     downloadPkgs=lambda packages: True,
     repos=flexmock(
         repos={},
-        add=lambda *args, **kwargs: True,
         enableRepo=lambda *args, **kwargs: True,
-        findRepos=lambda *args: []
+        add=yum_YumBase_repos_add,
+        findRepos=yum_YumBase_findRepos
     ),
-    getReposFromConfigFile=lambda f: [flexmock(id=n) for n in open(f)]
+    getReposFromConfigFile=yum_YumBase_getReposFromConfigFile
 )
+yum.YumBase.repos.add = yum_YumBase_repos_add
 yum.yumRepo = flexmock()
 yum.yumRepo.YumRepository = flexmock(
     pkgdir='/pkgdir',
@@ -145,21 +184,19 @@ class test_sync_repo:
 class test_repo_configs:
 
     def setUp(self):
+        reset_repos()
         self.tempdir = tempfile.mkdtemp()
         self.repofile1 = os.path.join(self.tempdir, 'repo1.repo')
         self.repofile2 = os.path.join(self.tempdir, 'repos2and3.repo')
         self.repodir = os.path.join(self.tempdir, 'repos.d')
-        self.repodir_file1 = os.path.join(self.repodir, 'repo4.repo')
-        self.repodir_file2 = os.path.join(self.repodir, 'repo5.repo')
+        self.repodir_file = os.path.join(self.repodir, 'repo4.repo')
         os.makedirs(self.repodir)
         with open(self.repofile1, 'w') as f:
-            f.write('repo1\n')
+            f.write('repo1 http://url1\n')
         with open(self.repofile2, 'w') as f:
-            f.write('repo2\nrepo3\n')
-        with open(self.repodir_file1, 'w') as f:
-            f.write('repo4')
-        with open(self.repodir_file2, 'w') as f:
-            f.write('repo5')
+            f.write('repo2 http://url2\nrepo3 http://url3\n')
+        with open(self.repodir_file, 'w') as f:
+            f.write('repo4 http://url4\n')
 
     def tearDown(self):
         if os.path.exists(self.tempdir):
@@ -167,3 +204,20 @@ class test_repo_configs:
 
     def test_single_repo_from_file(self):
         repos = pakrat.repos.from_file(self.repofile1)
+        assert_equals(len(repos), 1)
+        assert_equals(repos[0].id, 'repo1')
+        assert_equals(repos[0].baseurls, ['http://url1'])
+
+    def test_multiple_repos_from_file(self):
+        repos = pakrat.repos.from_file(self.repofile2)
+        assert_equals(len(repos), 2)
+        assert_equals(repos[0].id, 'repo2')
+        assert_equals(repos[1].id, 'repo3')
+        assert_equals(repos[0].baseurls, ['http://url2'])
+        assert_equals(repos[1].baseurls, ['http://url3'])
+
+    def test_repos_from_repo_dir(self):
+        repos = pakrat.repos.from_dir(self.repodir)
+        assert_equals(len(repos), 1)
+        assert_equals(repos[0].id, 'repo4')
+        assert_equals(repos[0].baseurls, ['http://url4'])

@@ -4,7 +4,7 @@ export PYTHONPATH:=${PWD}
 
 unit:
 	@echo "Running unit tests"
-	@nosetests -s --verbosity=2 --with-coverage --cover-erase \
+	@nosetests -s --with-coverage --cover-erase --verbosity=2 \
 		--cover-inclusive test --cover-package=pakrat
 
 publish:
