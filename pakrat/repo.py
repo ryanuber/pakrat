@@ -118,7 +118,6 @@ def sync(repo, dest, version=None, delete=False):
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
-    print pkglist
     create_metadata(repo, pkglist)
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:
