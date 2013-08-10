@@ -53,7 +53,6 @@ def set_path(repo, path):
     # exception from YUM's yumRepo.py, line 530 and 557.
     try: repo.pkgdir = path
     except yum.Errors.RepoError: pass
-    return repo
 
 def create_metadata(repo, packages=None):
     """ Generate YUM metadata for a repository.

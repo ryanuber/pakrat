@@ -122,6 +122,8 @@ def validate_mirrorlist(mirrorlist):
 
 def validate_repo(repo):
     """ Validate a repository object. """
+    # nothing for now
+    return True
     if type(repo) is not yum.yumRepo.YumRepository:
         raise Exception('repo must be a YumRepository, not "%s"' % type(repo))
 
