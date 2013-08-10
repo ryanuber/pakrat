@@ -1,4 +1,7 @@
+import os
 import sys
+import tempfile
+import shutil
 from flexmock import flexmock
 from nose.tools import *
 
@@ -31,16 +34,20 @@ yum.YumBase = flexmock(
             yumpkg('grub', '0.99', '1.el6', 'x86_64')
         ]
     ),
+    doSackSetup=lambda *args, **kwargs: True,
     downloadPkgs=lambda packages: True,
     repos=flexmock(
         repos={},
         add=lambda *args, **kwargs: True,
-        enableRepo=lambda *args, **kwargs: True
-    )
+        enableRepo=lambda *args, **kwargs: True,
+        findRepos=lambda *args: []
+    ),
+    getReposFromConfigFile=lambda f: [flexmock(id=n) for n in open(f)]
 )
 yum.yumRepo = flexmock()
 yum.yumRepo.YumRepository = flexmock(
-    pkgdir='/pkgdir'
+    pkgdir='/pkgdir',
+    getAttrubite=lambda: True
 )
 yum.Errors = flexmock()
 yum.Errors.RepoError = flexmock()
@@ -134,3 +141,29 @@ class test_sync_repo:
     def test_sync_repo(self):
         repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
         pakrat.repo.sync(repo, '/tmp/pakrat')
+
+class test_repo_configs:
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.repofile1 = os.path.join(self.tempdir, 'repo1.repo')
+        self.repofile2 = os.path.join(self.tempdir, 'repos2and3.repo')
+        self.repodir = os.path.join(self.tempdir, 'repos.d')
+        self.repodir_file1 = os.path.join(self.repodir, 'repo4.repo')
+        self.repodir_file2 = os.path.join(self.repodir, 'repo5.repo')
+        os.makedirs(self.repodir)
+        with open(self.repofile1, 'w') as f:
+            f.write('repo1\n')
+        with open(self.repofile2, 'w') as f:
+            f.write('repo2\nrepo3\n')
+        with open(self.repodir_file1, 'w') as f:
+            f.write('repo4')
+        with open(self.repodir_file2, 'w') as f:
+            f.write('repo5')
+
+    def tearDown(self):
+        if os.path.exists(self.tempdir):
+            shutil.rmtree(self.tempdir)
+
+    def test_single_repo_from_file(self):
+        repos = pakrat.repos.from_file(self.repofile1)
