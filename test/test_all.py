@@ -112,47 +112,38 @@ import pakrat
 class test_repo_factory:
 
     def test_with_baseurl(self):
-        #(yum.YumBase
-        #    .should_receive('add_enable_repo')
-        #    .once
-        #    .with_args('repo1', baseurls=['http://url1'])
-        #    .and_return(flexmock))
-        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         assert_equals(repo.id, 'repo1')
         assert_equals(len(repo.baseurls), 1)
         assert_equals(repo.baseurls[0], 'http://url1')
 
     def test_with_multiple_baseurls(self):
-        repo = pakrat.repo.factory(
-            name='repo1',
-            baseurls=['http://url1', 'http://url2']
-        )
+        repo = pakrat.repo.factory('repo1',
+            baseurls=['http://url1', 'http://url2'])
         assert_equals(len(repo.baseurls), 2)
 
     def test_url_types(self):
-        assert pakrat.repo.factory(
-            name='repo1',
-            baseurls=['http://url1', 'https://url2', 'file:///url3']
-        )
-        assert pakrat.repo.factory(name='repo1', mirrorlist='http://url1')
-        assert pakrat.repo.factory(name='repo2', mirrorlist='https://url2')
+        pakrat.repo.factory('repo1',
+            baseurls=['http://url1', 'https://url2', 'file:///url3'])
+        assert pakrat.repo.factory('repo1', mirrorlist='http://url1')
+        assert pakrat.repo.factory('repo2', mirrorlist='https://url2')
 
     @raises(Exception)
     def test_baseurl_exception(self):
-        pakrat.repo.factory(name='repo1', baseurls=['http://good', 'bad'])
+        pakrat.repo.factory('repo1', baseurls=['http://good', 'bad'])
 
     @raises(Exception)
     def test_mirrorlist_exception(self):
-        pakrat.repo.factory(name='repo1', mirrorlist='bad')
+        pakrat.repo.factory('repo1', mirrorlist='bad')
 
     @raises(Exception)
     def test_mirrorlist_with_file_url(self):
-        pakrat.repo.factory(name='repo1', mirrorlist='file:///url1')
+        pakrat.repo.factory('repo1', mirrorlist='file:///url1')
 
 class test_set_repo_path:
 
     def test_set_repo_path(self):
-        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pkgdir_before = repo.pkgdir
         pakrat.repo.set_path(repo, '/newdir')
         pkgdir_after = repo.pkgdir
@@ -168,7 +159,7 @@ class test_create_metadata:
         #    .should_receive('doRepoMetadata').times(1))
         #(mocks['createrepo.SplitMetaDataGenerator']
         #    .should_receive('doFinalMove').times(1))
-        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pakrat.repo.create_metadata(repo)
 
 class test_sync_repo:
@@ -182,7 +173,18 @@ class test_sync_repo:
         }
 
     def test_sync_repo(self):
-        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        (self.mocks['makedirs']
+            .should_receive('makedirs')
+            .with_args('/tmp/pakrat')
+            .at_least.once)
+        (self.mocks['makedirs']
+            .should_receive('makedirs')
+            .with_args('/tmp/pakrat/Packages')
+            .at_least.once)
+        (self.mocks['symlink']
+            .should_receive('symlink')
+            .times(0))
+        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pakrat.repo.sync(repo, '/tmp/pakrat')
 
     def test_sync_with_version(self):
@@ -206,8 +208,7 @@ class test_sync_repo:
             .should_receive('symlink')
             .with_args('1.0', '/tmp/pakrat/repo1/latest')
             .once)
-            
-        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pakrat.repo.sync(repo, '/tmp/pakrat/repo1', '1.0')
 
 class test_repo_configs:

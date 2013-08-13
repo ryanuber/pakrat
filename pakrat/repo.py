@@ -82,13 +82,13 @@ def sync(repo, dest, version=None, delete=False):
     util.make_dir(util.get_packages_dir(dest))  # Make package storage dir
     if version:
         dest_dir = util.get_versioned_dir(dest, version)
-        util.make_dir(dest_dir)
         packages_dir = util.get_packages_dir(dest_dir)
     	util.symlink(packages_dir, util.get_relative_packages_dir())
     else:
         dest_dir = dest
         packages_dir = util.get_packages_dir(dest_dir)
     try:
+        util.make_dir(dest_dir)
         yb = util.get_yum()
         set_path(repo, packages_dir)
         yb.repos.add(repo)
