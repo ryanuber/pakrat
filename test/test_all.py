@@ -144,11 +144,16 @@ class test_repo_factory:
             baseurls=['http://url1', 'http://url2'])
         assert_equals(len(repo.baseurls), 2)
 
+    def test_with_mirrorlist(self):
+        repo = pakrat.repo.factory('repo1', mirrorlist='http://url1')
+        assert_equals(len(repo.baseurls), 0)
+        assert_equals(repo.mirrorlist, 'http://url1')
+
     def test_url_types(self):
         pakrat.repo.factory('repo1',
             baseurls=['http://url1', 'https://url2', 'file:///url3'])
-        assert pakrat.repo.factory('repo1', mirrorlist='http://url1')
-        assert pakrat.repo.factory('repo2', mirrorlist='https://url2')
+        pakrat.repo.factory('repo1', mirrorlist='http://url1')
+        pakrat.repo.factory('repo2', mirrorlist='https://url2')
 
     @raises(Exception)
     def test_baseurl_exception(self):
