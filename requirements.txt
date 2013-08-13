@@ -1,2 +1,3 @@
 nose
+nose_cov
 flexmock

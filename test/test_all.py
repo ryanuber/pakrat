@@ -263,4 +263,3 @@ class test_repo_configs:
         assert_equals(len(repos), 1)
         assert_equals(repos[0].id, 'repo4')
         assert_equals(repos[0].baseurls, ['http://url4'])
-
