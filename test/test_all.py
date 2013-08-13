@@ -168,12 +168,6 @@ class test_create_metadata:
             .and_return(True))
 
     def test_create_metadata(self):
-        #(mocks['createrepo.SplitMetaDataGenerator']
-        #    .should_receive('doPkgMetadata').times(1))
-        #(mocks['createrepo.SplitMetaDataGenerator']
-        #    .should_receive('doRepoMetadata').times(1))
-        #(mocks['createrepo.SplitMetaDataGenerator']
-        #    .should_receive('doFinalMove').times(1))
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pakrat.repo.create_metadata(repo)
 
