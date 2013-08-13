@@ -5,116 +5,133 @@ import shutil
 from flexmock import flexmock
 from nose.tools import *
 
-# Mock YUM module
-repos = []
+def setup_mocks():
+    mocks = {}
 
-def reset_repos():
+    # Mock YUM module
     global repos
     repos = []
 
-def yumrepo(id, baseurls=[], mirrorlist=None):
-    def getAttribute(attr):
-        if attr == 'name':
-            return id
-    return flexmock(
-        id=id,
-        baseurls=baseurls,
-        mirrorlist=mirrorlist,
+    def yumrepo(id, baseurls=[], mirrorlist=None):
+        def getAttribute(attr):
+            if attr == 'name':
+                return id
+        return flexmock(
+            id=id,
+            baseurls=baseurls,
+            mirrorlist=mirrorlist,
+            pkgdir='/pkgdir',
+            getAttribute=lambda attr: getAttribute(attr),
+            isEnabled=lambda: True
+        )
+
+    def yumpkg(name, version, release, arch):
+        return flexmock(name=name, version=version, release=release, arch=arch)
+
+    def yum_YumBase_doPackageLists(*args, **kwargs):
+        return flexmock(
+            available=[
+                yumpkg('pakrat', '0.2.3', '1.el6', 'noarch')
+            ],
+            reinstall_available=[
+                yumpkg('kernel', '2.6.32', '128-9.el6', 'x86_64'),
+                yumpkg('grub', '0.99', '1.el6', 'x86_64')
+            ]
+        )
+
+    def yum_YumBase_add_enable_repo(name, baseurls=[], mirrorlist=None):
+        repo = yumrepo(name, baseurls, mirrorlist)
+        repos.append(repo)
+        return repo
+
+    def yum_YumBase_repos_add(name, baseurls=[], mirrorlist=None):
+        repos.append(yumrepo(name, baseurls, mirrorlist))
+        return True
+
+    def yum_YumBase_findRepos(pattern):
+        if pattern == '*':
+            return repos
+
+    def yum_YumBase_getReposFromConfigFile(path):
+        result = []
+        if os.path.exists(path):
+            for repo in open(path):
+                name, url = repo.strip().split()
+                repo = yumrepo(name, baseurls=[url])
+                repos.append(repo)
+                result.append(repo)
+        return True
+
+    yum = flexmock()
+    yum._YumPreBaseConf = flexmock()
+    yum._YumPreRepoConf = flexmock()
+    yum.misc = flexmock(
+        getCacheDir=lambda: '/tmp/pakrat'
+    )
+    yum.YumBase = flexmock(
+        add_enable_repo=yum_YumBase_add_enable_repo,
+        setCacheDir=lambda **kwargs: True,
+        doPackageLists=yum_YumBase_doPackageLists,
+        doSackSetup=lambda *args, **kwargs: True,
+        downloadPkgs=lambda packages: True,
+        repos=flexmock(
+            repos={},
+            enableRepo=lambda *args, **kwargs: True,
+            add=yum_YumBase_repos_add,
+            findRepos=yum_YumBase_findRepos
+        ),
+        getReposFromConfigFile=yum_YumBase_getReposFromConfigFile
+    )
+    yum.YumBase.repos.add = yum_YumBase_repos_add
+    yum.yumRepo = flexmock()
+    yum.yumRepo.YumRepository = flexmock(
         pkgdir='/pkgdir',
-        getAttribute=lambda attr: getAttribute(attr),
-        isEnabled=lambda: True
+        getAttrubite=lambda: True
     )
+    yum.Errors = flexmock()
+    yum.Errors.RepoError = flexmock()
+    sys.modules['yum'] = yum
 
-def yumpkg(name, version, release, arch):
-    return flexmock(name=name, version=version, release=release, arch=arch)
-
-def yum_YumBase_doPackageLists(*args, **kwargs):
-    return flexmock(
-        available=[
-            yumpkg('pakrat', '0.2.3', '1.el6', 'noarch')
-        ],
-        reinstall_available=[
-            yumpkg('kernel', '2.6.32', '128-9.el6', 'x86_64'),
-            yumpkg('grub', '0.99', '1.el6', 'x86_64')
-        ]
-    )
-
-def yum_YumBase_add_enable_repo(name, baseurls=[], mirrorlist=None):
-    repo = yumrepo(name, baseurls, mirrorlist)
-    repos.append(repo)
-    return repo
-
-def yum_YumBase_repos_add(name, baseurls=[], mirrorlist=None):
-    repos.append(yumrepo(name, baseurls, mirrorlist))
-    return True
-
-def yum_YumBase_findRepos(pattern):
-    if pattern == '*':
-        return repos
-
-def yum_YumBase_getReposFromConfigFile(path):
-    result = []
-    if os.path.exists(path):
-        for repo in open(path):
-            name, url = repo.strip().split()
-            repo = yumrepo(name, baseurls=[url])
-            repos.append(repo)
-            result.append(repo)
-    return True
-
-yum = flexmock()
-yum._YumPreBaseConf = flexmock()
-yum._YumPreRepoConf = flexmock()
-yum.misc = flexmock(
-    getCacheDir=lambda: '/tmp/pakrat'
-)
-yum.YumBase = flexmock(
-    add_enable_repo=yum_YumBase_add_enable_repo,
-    setCacheDir=lambda **kwargs: True,
-    doPackageLists=yum_YumBase_doPackageLists,
-    doSackSetup=lambda *args, **kwargs: True,
-    downloadPkgs=lambda packages: True,
-    repos=flexmock(
-        repos={},
-        enableRepo=lambda *args, **kwargs: True,
-        add=yum_YumBase_repos_add,
-        findRepos=yum_YumBase_findRepos
-    ),
-    getReposFromConfigFile=yum_YumBase_getReposFromConfigFile
-)
-yum.YumBase.repos.add = yum_YumBase_repos_add
-yum.yumRepo = flexmock()
-yum.yumRepo.YumRepository = flexmock(
-    pkgdir='/pkgdir',
-    getAttrubite=lambda: True
-)
-yum.Errors = flexmock()
-yum.Errors.RepoError = flexmock()
-sys.modules['yum'] = yum
-
-# Mock createrepo module
-createrepo = flexmock(
-    SplitMetaDataGenerator=(
-        lambda *args: flexmock(
-            conf = {},
-            doPkgMetadata=lambda: True,
-            doRepoMetadata=lambda: True,
-            doFinalMove=lambda: True
+    # Mock createrepo module
+    createrepo = flexmock(
+        SplitMetaDataGenerator=(
+            lambda *args: flexmock(
+                conf = {},
+                doPkgMetadata=lambda: True,
+                doRepoMetadata=lambda: True,
+                doFinalMove=lambda: True
+            )
         )
     )
-)
-createrepo.MetaDataConfig = flexmock()
-sys.modules['createrepo'] = createrepo
+    createrepo.MetaDataConfig = flexmock()
+    sys.modules['createrepo'] = createrepo
 
-# Import pakrat after defining mocked modules
-import pakrat
+    # Pakrat must be global because we import it inside of a function.
+    global pakrat
+
+    # Import pakrat after defining mocked modules
+    import pakrat
+
+    # Overload the validate_repo method, because it checks the type of
+    # yum.yumBase.YumRepository obejcts.
+    (flexmock(sys.modules['pakrat'])
+        .should_receive('util.validate_repo')
+        .and_return(True))
+
+    # Do not create directories during testing
+    mocks['makedirs'] = flexmock(sys.modules['os'],
+            makedirs=lambda *args: True)
+
+    # Do not create symlinks during testing
+    mocks['symlink'] = flexmock(sys.modules['os'],
+                symlink=lambda *args, **kwargs: True)
+
+    return mocks
 
 class test_repo_factory:
 
     def setUp(self):
-        (flexmock(sys.modules['pakrat'])
-            .should_receive('util.validate_repo')
-            .and_return(True))
+        self.mocks = setup_mocks()
 
     def test_with_baseurl(self):
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
@@ -148,9 +165,7 @@ class test_repo_factory:
 class test_set_repo_path:
 
     def setUp(self):
-        (flexmock(sys.modules['pakrat'])
-            .should_receive('util.validate_repo')
-            .and_return(True))
+        self.mocks = setup_mocks()
 
     def test_set_repo_path(self):
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
@@ -163,9 +178,7 @@ class test_set_repo_path:
 class test_create_metadata:
 
     def setUp(self):
-        (flexmock(sys.modules['pakrat'])
-            .should_receive('util.validate_repo')
-            .and_return(True))
+        self.mocks = setup_mocks()
 
     def test_create_metadata(self):
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
@@ -174,15 +187,7 @@ class test_create_metadata:
 class test_sync_repo:
 
     def setUp(self):
-        self.mocks = {
-            'makedirs': flexmock(sys.modules['os'],
-                makedirs=lambda *args: True),
-            'symlink': flexmock(sys.modules['os'],
-                symlink=lambda *args, **kwargs: True)
-        }
-        (flexmock(sys.modules['pakrat'])
-            .should_receive('util.validate_repo')
-            .and_return(True))
+        self.mocks = setup_mocks()
 
     def test_sync_repo(self):
         (self.mocks['makedirs']
@@ -226,7 +231,6 @@ class test_sync_repo:
 class test_repo_configs:
 
     def setUp(self):
-        reset_repos()
         self.tempdir = tempfile.mkdtemp()
         self.repofile1 = os.path.join(self.tempdir, 'repo1.repo')
         self.repofile2 = os.path.join(self.tempdir, 'repos2and3.repo')
@@ -239,6 +243,9 @@ class test_repo_configs:
             f.write('repo2 http://url2\nrepo3 http://url3\n')
         with open(self.repodir_file, 'w') as f:
             f.write('repo4 http://url4\n')
+        # Mocks must come after dir/file creation, because they mock I/O
+        # functions used above.
+        self.mocks = setup_mocks()
 
     def tearDown(self):
         if os.path.exists(self.tempdir):
