@@ -163,28 +163,28 @@ def validate_repodirs(repodirs):
     for repodir in repodirs:
         validate_repodir(repodir)
 
-def make_dir(dir):
+def make_dir(_dir):
     """ Create a directory recursively, if it does not exist. """
-    if not os.path.exists(dir):
-        log.trace('Creating directory %s' % dir)
-        os.makedirs(dir)
+    if not os.path.exists(_dir):
+        log.trace('Creating directory %s' % _dir)
+        os.makedirs(_dir)
 
-def symlink(path, target):
+def symlink(_path, target):
     """ Create a symbolic link.
 
     Determines if a link in the destination already exists, and if it does,
     updates its target. If the destination exists but is not a link, throws an
     exception. If the link does not exist, it is created.
     """
-    if not os.path.islink(path):
-        if os.path.exists(path):
-            raise Exception('%s exists - Cannot create symlink' % path)
-        dir = os.path.dirname(path)
-        if not os.path.exists(dir):
-            make_dir(dir)
-    elif os.readlink(path) != target:
-        log.trace('Unlinking %s because its target is changing' % path)
-        os.unlink(path)
-    if not os.path.lexists(path):
-        log.trace('Linking %s to %s' % (path, target))
-        os.symlink(target, path)
+    if not os.path.islink(_path):
+        if os.path.exists(_path):
+            raise Exception('%s exists - Cannot create symlink' % _path)
+        _dir = os.path.dirname(_path)
+        if not os.path.exists(_dir):
+            make_dir(_dir)
+    elif os.readlink(_path) != target:
+        log.trace('Unlinking %s because its target is changing' % _path)
+        os.unlink(_path)
+    if not os.path.lexists(_path):
+        log.trace('Linking %s to %s' % (_path, target))
+        os.symlink(target, _path)

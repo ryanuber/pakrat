@@ -174,12 +174,41 @@ class test_create_metadata:
 class test_sync_repo:
 
     def setUp(self):
-        flexmock(sys.modules['os'], makedirs=lambda *args: True)
-        flexmock(sys.modules['os'], symlink=lambda *args, **kwargs: True)
+        self.mocks = {
+            'makedirs': flexmock(sys.modules['os'],
+                makedirs=lambda *args: True),
+            'symlink': flexmock(sys.modules['os'],
+                symlink=lambda *args, **kwargs: True)
+        }
 
     def test_sync_repo(self):
         repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
         pakrat.repo.sync(repo, '/tmp/pakrat')
+
+    def test_sync_with_version(self):
+        (self.mocks['makedirs']
+            .should_receive('makedirs')
+            .with_args('/tmp/pakrat/repo1')
+            .at_least.once)
+        (self.mocks['makedirs']
+            .should_receive('makedirs')
+            .with_args('/tmp/pakrat/repo1/Packages')
+            .at_least.once)
+        (self.mocks['makedirs']
+            .should_receive('makedirs')
+            .with_args('/tmp/pakrat/repo1/1.0')
+            .at_least.once)
+        (self.mocks['symlink']
+            .should_receive('symlink')
+            .with_args('../Packages', '/tmp/pakrat/repo1/1.0/Packages')
+            .once)
+        (self.mocks['symlink']
+            .should_receive('symlink')
+            .with_args('1.0', '/tmp/pakrat/repo1/latest')
+            .once)
+            
+        repo = pakrat.repo.factory(name='repo1', baseurls=['http://url1'])
+        pakrat.repo.sync(repo, '/tmp/pakrat/repo1', '1.0')
 
 class test_repo_configs:
 
