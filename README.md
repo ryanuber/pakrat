@@ -3,7 +3,7 @@ Pakrat
 
 A command-line tool to mirror YUM repositories with versioning
 
-![Build Status](https://travis-ci.org/ryanuber/pakrat.png "")
+[![Build Status](https://travis-ci.org/ryanuber/pakrat.png)](https://travis-ci.org/ryanuber/pakrat)
 
 What does it do?
 ----------------
