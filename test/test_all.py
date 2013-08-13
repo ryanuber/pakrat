@@ -111,6 +111,11 @@ import pakrat
 
 class test_repo_factory:
 
+    def setUp(self):
+        (flexmock(sys.modules['pakrat'])
+            .should_receive('util.validate_repo')
+            .and_return(True))
+
     def test_with_baseurl(self):
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         assert_equals(repo.id, 'repo1')
@@ -142,6 +147,11 @@ class test_repo_factory:
 
 class test_set_repo_path:
 
+    def setUp(self):
+        (flexmock(sys.modules['pakrat'])
+            .should_receive('util.validate_repo')
+            .and_return(True))
+
     def test_set_repo_path(self):
         repo = pakrat.repo.factory('repo1', baseurls=['http://url1'])
         pkgdir_before = repo.pkgdir
@@ -151,6 +161,11 @@ class test_set_repo_path:
         assert_equals(pkgdir_after, '/newdir')
 
 class test_create_metadata:
+
+    def setUp(self):
+        (flexmock(sys.modules['pakrat'])
+            .should_receive('util.validate_repo')
+            .and_return(True))
 
     def test_create_metadata(self):
         #(mocks['createrepo.SplitMetaDataGenerator']
@@ -171,6 +186,9 @@ class test_sync_repo:
             'symlink': flexmock(sys.modules['os'],
                 symlink=lambda *args, **kwargs: True)
         }
+        (flexmock(sys.modules['pakrat'])
+            .should_receive('util.validate_repo')
+            .and_return(True))
 
     def test_sync_repo(self):
         (self.mocks['makedirs']
