@@ -8,10 +8,10 @@ from nose.tools import *
 def setup_mocks():
     mocks = {}
 
-    # Mock YUM module
     global repos
     repos = []
 
+    # Mock YUM module
     def yumrepo(id, baseurls=[], mirrorlist=None):
         def getAttribute(attr):
             if attr == 'name':
@@ -96,7 +96,7 @@ def setup_mocks():
     createrepo = flexmock(
         SplitMetaDataGenerator=(
             lambda *args: flexmock(
-                conf = {},
+                conf={},
                 doPkgMetadata=lambda: True,
                 doRepoMetadata=lambda: True,
                 doFinalMove=lambda: True
@@ -275,3 +275,21 @@ class test_repo_configs:
         assert_equals(len(repos), 1)
         assert_equals(repos[0].id, 'repo4')
         assert_equals(repos[0].baseurls, ['http://url4'])
+
+    # Main sync function tests follow
+    def test_sync_with_inline_repos(self):
+        repos = [
+            pakrat.repo.factory('repo1', baseurls=['http://url1']),
+            pakrat.repo.factory('repo2', mirrorlist='http://url2')
+        ]
+        pakrat.sync('/tmp/pakrat', objrepos=repos)
+        pakrat.sync('/tmp/pakrat', objrepos=repos, repoversion='1.0')
+
+    def test_sync_with_repos_from_file(self):
+        pakrat.sync('/tmp/pakrat', repofiles=[self.repofile1, self.repofile2])
+        pakrat.sync('/tmp/pakrat', repofiles=[self.repofile1, self.repofile2],
+                    repoversion='1.0')
+
+    def test_sync_with_repos_from_dir(self):
+        pakrat.sync('/tmp/pakrat', repodirs=[self.repodir])
+        pakrat.sync('/tmp/pakrat', repodirs=[self.repodir], repoversion='1.0')
