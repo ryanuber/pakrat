@@ -42,8 +42,8 @@ parser.add_option('--repoversion', default=None,
 	  'repositories will not be versioned.'))
 parser.add_option('--name', action='append',
     help='The name of a YUM repository. (repeatable)') 
-parser.add_option('--url', action='append',
-    help='The source URL to a repository (repeatable)')
+parser.add_option('--baseurl', action='append',
+    help='The baseurl of a repository (repeatable)')
 parser.add_option('--outdir', type='string', default=os.getcwd(),
     help='The root output directory to store repository data. Default '
          'is the current working directory.')

@@ -1,15 +1,25 @@
 Pakrat
 -------
 
-A command-line tool to mirror YUM repositories with versioning
+A tool to mirror and version YUM repositories
 
 What does it do?
 ----------------
 
-* You invoke pakrat and pass it some repository baseurl's or the path
-  to some YUM configurations
+* You invoke pakrat and pass it some information about your repositories.
 * Pakrat mirrors the YUM repositories, and optionally arranges the
   data in a versioned manner.
+
+Features
+--------
+
+* Mirror repository packages from remote sources
+* Optional repository versioning with user-defined version schema
+* Mirror YUM group metadata
+* Supports standard YUM configuration files
+* Supports YUM configuration directories (repos.d style)
+* Command-line interface
+* Parallel repository downloads for maximum effeciency
 
 Installation
 ------------
@@ -35,11 +45,11 @@ of RHEL like so:
 How to use it
 -------------
 
-Pakrat is mainly a command-line driven tool. The simplest possible example
-would involve mirroring a YUM repository in a very basic way:
+The simplest possible example would involve mirroring a YUM repository in a
+very basic way, using the CLI:
 
 ```
-$ pakrat --name centos --url http://mirror.centos.org/centos/6/os/x86_64
+$ pakrat --name centos --baseurl http://mirror.centos.org/centos/6/os/x86_64
 $ tree -d centos
 centos/
 ├── Packages
@@ -53,7 +63,7 @@ repository daily.
 $ pakrat \
     --repoversion $(date +%Y-%m-%d) \
     --name centos \
-    --url http://mirror.centos.org/centos/6/os/x86_64
+    --baseurl http://mirror.centos.org/centos/6/os/x86_64
 $ tree -d centos
 centos/
 ├── 2013-07-29
@@ -88,10 +98,8 @@ particularly quick. The other repositories do not need to wait on it to finish.
 ```
 $ pakrat \
     --repoversion $(date +%Y-%m-%d) \
-    --name centos \
-    --url http://mirror.centos.org/centos/6/os/x86_64 \
-    --name epel \
-    --url http://dl.fedoraproject.org/pub/epel/6/x86_64
+    --name centos --baseurl http://mirror.centos.org/centos/6/os/x86_64 \
+    --name epel --baseurl http://dl.fedoraproject.org/pub/epel/6/x86_64
 $ tree -d centos epel
 centos/
 ├── 2013-07-29
@@ -109,6 +117,20 @@ epel/
 
 Configuration can also be passed in from YUM configuration files. See the CLI
 `--help` for details.
+
+Pakrat also exposes its interfaces in plain python for integration with other
+projects and software. A good starting point for using Pakrat via the python
+API is to take a look at the `pakrat.sync` method. The CLI calls this method
+almost exclusively, so it should be fairly straightforward in its usage:
+```
+pakrat.sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None, delete=False)
+```
+
+Another handy python method is `pakrat.repo.factory`, which creates YUM
+repository objects so that no file-based configuration is needed.
+```
+pakrat.factory(name, baseurls=None, mirrorlist=None)
+```
 
 Building an RPM
 ---------------
