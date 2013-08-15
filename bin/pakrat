@@ -61,13 +61,12 @@ options, args = parser.parse_args()
 
 repos = []
 
-if options.name and options.url:
-    if len(options.name) != len(options.url):
+if options.name and options.baseurl:
+    if len(options.name) != len(options.baseurl):
         print 'Each repository must have a name and URL.'
         sys.exit(1)
-    for repo in zip(options.name, options.url):
-        name, url = repo
-        repos.append(pakrat.repo.factory(name=name, baseurls=[url]))
+    for name, baseurl in zip(options.name, options.baseurl):
+        repos.append(pakrat.repo.factory(name=name, baseurls=[baseurl]))
 
 if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
