@@ -62,13 +62,7 @@ def setup_mocks():
                 result.append(repo)
         return True
 
-    yum = flexmock()
-    yum._YumPreBaseConf = flexmock()
-    yum._YumPreRepoConf = flexmock()
-    yum.misc = flexmock(
-        getCacheDir=lambda: '/tmp/pakrat'
-    )
-    yum.YumBase = flexmock(
+    mocks['YumBase'] = flexmock(
         add_enable_repo=yum_YumBase_add_enable_repo,
         setCacheDir=lambda **kwargs: True,
         doPackageLists=yum_YumBase_doPackageLists,
@@ -82,7 +76,14 @@ def setup_mocks():
         ),
         getReposFromConfigFile=yum_YumBase_getReposFromConfigFile
     )
-    yum.YumBase.repos.add = yum_YumBase_repos_add
+    yum = flexmock(
+        YumBase=lambda: mocks['YumBase']
+    )
+    yum._YumPreBaseConf = flexmock()
+    yum._YumPreRepoConf = flexmock()
+    yum.misc = flexmock(
+        getCacheDir=lambda: '/tmp/pakrat'
+    )
     yum.yumRepo = flexmock()
     yum.yumRepo.YumRepository = flexmock(
         pkgdir='/pkgdir',
@@ -291,5 +292,6 @@ class test_repo_configs:
                     repoversion='1.0')
 
     def test_sync_with_repos_from_dir(self):
+        #self.mocks['YumBase'].should_receive('doPackageLists').at_least.once
         pakrat.sync('/tmp/pakrat', repodirs=[self.repodir])
         pakrat.sync('/tmp/pakrat', repodirs=[self.repodir], repoversion='1.0')
