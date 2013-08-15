@@ -81,7 +81,7 @@ def create_metadata(repo, packages=None, comps=None):
     generator.doRepoMetadata()
     generator.doFinalMove()
 
-    if os.path.exists(groupdir):
+    if comps and os.path.exists(groupdir):
         shutil.rmtree(groupdir)
 
 def sync(repo, dest, version, delete=False):
