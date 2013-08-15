@@ -29,7 +29,7 @@ import signal
 import urlparse
 from pakrat import util, log, repo, repos
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 
 def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
          delete=False):
