@@ -23,6 +23,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
+import tempfile
+import shutil
 import yum
 import createrepo
 from pakrat import util, log
@@ -32,8 +34,8 @@ def factory(name, baseurls=None, mirrorlist=None):
 
     This makes it possible to mirror YUM repositories without having any stored
     configuration anywhere. Simply pass in the name of the repository, and
-    either one or more baseurl's or a mirrorlist URL, and you will get an object
-    in return that you can pass to a mirroring function.
+    either one or more baseurl's or a mirrorlist URL, and you will get an
+    object in return that you can pass to a mirroring function.
     """
     yb = util.get_yum()
     if baseurls is not None:
@@ -43,7 +45,7 @@ def factory(name, baseurls=None, mirrorlist=None):
         util.validate_mirrorlist(mirrorlist)
         repo = yb.add_enable_repo(name, mirrorlist=mirrorlist)
     else:
-        raise Exception('One or more baseurls or a mirrorlist must be provided')
+        raise Exception('One or more baseurls or mirrorlist required')
     return repo
 
 def set_path(repo, path):
@@ -55,7 +57,7 @@ def set_path(repo, path):
     except yum.Errors.RepoError: pass
     return repo
 
-def create_metadata(repo, packages=None):
+def create_metadata(repo, packages=None, comps=None):
     """ Generate YUM metadata for a repository.
 
     This method accepts a repository object and, based on its configuration,
@@ -67,10 +69,20 @@ def create_metadata(repo, packages=None):
     conf.outputdir = os.path.dirname(repo.pkgdir)
     conf.pkglist = packages
     conf.quiet = True
+
+    if comps:
+        groupdir = tempfile.mkdtemp()
+        conf.groupfile = os.path.join(groupdir, 'groups.xml')
+        with open(conf.groupfile, 'w') as f:
+            f.write(comps)
+
     generator = createrepo.SplitMetaDataGenerator(conf)
     generator.doPkgMetadata()
     generator.doRepoMetadata()
     generator.doFinalMove()
+
+    if os.path.exists(groupdir):
+        shutil.rmtree(groupdir)
 
 def sync(repo, dest, version, delete=False):
     """ Sync repository contents from a remote source.
@@ -85,7 +97,7 @@ def sync(repo, dest, version, delete=False):
         dest_dir = util.get_versioned_dir(dest, version)
         util.make_dir(dest_dir)
         packages_dir = util.get_packages_dir(dest_dir)
-    	util.symlink(packages_dir, util.get_relative_packages_dir())
+        util.symlink(packages_dir, util.get_relative_packages_dir())
     else:
         dest_dir = dest
         packages_dir = util.get_packages_dir(dest_dir)
@@ -113,13 +125,23 @@ def sync(repo, dest, version, delete=False):
                 log.debug('Deleting file %s' % package_path)
                 os.remove(package_path)
     log.info('Finished downloading packages from repository %s' % repo.id)
+
+    comps = None
+    if repo.enablegroups:
+        try:
+            comps = yb._getGroups().xml()
+            log.info('Group data retrieved for repository %s' % repo.id)
+        except yum.Errors.GroupsError:
+            log.debug('No group data available for repository %s' % repo.id)
+            pass
+
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
-    create_metadata(repo, pkglist)
+    create_metadata(repo, pkglist, comps)
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)

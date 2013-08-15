@@ -40,5 +40,6 @@ class YumBase(yum.YumBase):
         self.preconf = yum._YumPreBaseConf()
         self.preconf.debuglevel = 0
         self.prerepoconf = yum._YumPreRepoConf()
-        self.setCacheDir(force=True, reuse=False, tmpdir=yum.misc.getCacheDir())
+        self.setCacheDir(force=True, reuse=False,
+                         tmpdir=yum.misc.getCacheDir())
         self.repos.repos = {}
