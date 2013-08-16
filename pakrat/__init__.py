@@ -57,10 +57,12 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
 
     processes = []
     for objrepo in objrepos:
-        callback = progress.YumProgress(objrepo, prog)
+        prog.update(objrepo)
+        yumcallback = progress.YumProgress(objrepo, prog)
         dest = util.get_repo_dir(basedir, objrepo.id)
         p = multiprocessing.Process(target=repo.sync, args=(objrepo, dest,
-                                    repoversion, delete, callback))
+                                    repoversion, delete, prog.update,
+                                    yumcallback))
         p.start()
         processes.append(p)
 
@@ -87,3 +89,5 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)
+
+    prog.complete_all()

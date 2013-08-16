@@ -84,7 +84,8 @@ def create_metadata(repo, packages=None, comps=None):
     if comps and os.path.exists(groupdir):
         shutil.rmtree(groupdir)
 
-def sync(repo, dest, version, delete=False, callback=None):
+def sync(repo, dest, version, delete=False, initcallback=None,
+         yumcallback=None):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -104,8 +105,8 @@ def sync(repo, dest, version, delete=False, callback=None):
     try:
         yb = util.get_yum()
         repo = set_path(repo, packages_dir)
-        if callback:
-            repo.setCallback(callback)
+        if yumcallback:
+            repo.setCallback(yumcallback)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
         # showdups allows us to get multiple versions of the same package.
@@ -114,6 +115,8 @@ def sync(repo, dest, version, delete=False, callback=None):
     except yum.Errors.RepoError, e:
         log.error(e)
         return False
+    if initcallback:
+        initcallback(repo, set_total=len(packages))
     yb.downloadPkgs(packages)
     if delete:
         package_names = []
