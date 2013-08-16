@@ -104,6 +104,8 @@ def sync(repo, dest, version, delete=False, callback=None):
     try:
         yb = util.get_yum()
         repo = set_path(repo, packages_dir)
+        if callback:
+            repo.setCallback(callback)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
         # showdups allows us to get multiple versions of the same package.
@@ -112,8 +114,6 @@ def sync(repo, dest, version, delete=False, callback=None):
     except yum.Errors.RepoError, e:
         log.error(e)
         return False
-    if hasattr(callback, '__call__'):
-        callback(repo, total=len(packages))
     yb.downloadPkgs(packages)
     if delete:
         package_names = []

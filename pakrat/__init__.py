@@ -53,13 +53,14 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     for _dir in repodirs:
         objrepos += repos.from_dir(_dir)
 
-    callback = progress.Progress()
+    prog = progress.Progress()
 
     processes = []
     for objrepo in objrepos:
+        callback = progress.YumProgress(objrepo, prog)
         dest = util.get_repo_dir(basedir, objrepo.id)
         p = multiprocessing.Process(target=repo.sync, args=(objrepo, dest,
-                                    repoversion, delete, callback.update))
+                                    repoversion, delete, callback))
         p.start()
         processes.append(p)
 
