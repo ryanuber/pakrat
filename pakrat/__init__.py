@@ -61,11 +61,11 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     for objrepo in objrepos:
         prog.update(objrepo.id)
         yumcallback = progress.YumProgress(objrepo.id, queue)
-        initcallback = progress.ProgressInit(objrepo.id, queue)
+        callback = progress.ProgressCallback(objrepo.id, queue)
         dest = util.get_repo_dir(basedir, objrepo.id)
         p = multiprocessing.Process(target=repo.sync, args=(objrepo, dest,
                                     repoversion, delete, yumcallback,
-                                    initcallback))
+                                    callback))
         p.start()
         processes.append(p)
 
@@ -88,8 +88,6 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
 
-    status = {'os':0, 'extras':0}
-
     while len(processes) > 0:
         while not queue.empty():
             e = queue.get()
@@ -99,6 +97,8 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
                 prog.update(e['repo_id'], set_total=e['value'])
             elif e['action'] == 'downloaded' and e.has_key('value'):
                 prog.update(e['repo_id'], add_downloaded=e['value'])
+            elif e['action'] == 'completed':
+                prog.update(e['repo_id'], set_complete=True)
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)

@@ -9,13 +9,16 @@ class Progress(object):
     def __init__(self):
         self.start = datetime.datetime.now()
 
-    def update(self, repo_id, set_total=None, add_downloaded=None):
+    def update(self, repo_id, set_total=None, add_downloaded=None,
+               set_complete=None):
         if not self.repos.has_key(repo_id):
             self.repos[repo_id] = {'numpkgs':0, 'dlpkgs':0}
         if set_total:
             self.repos[repo_id]['numpkgs'] = set_total
         if add_downloaded:
             self.repos[repo_id]['dlpkgs'] += add_downloaded
+        if set_complete:
+            self.repos[repo_id]['dlpkgs'] = self.repos[repo_id]['numpkgs']
         self.formatted()
 
     @staticmethod
@@ -72,12 +75,13 @@ class YumProgress(object):
             self.queue.put({'repo_id':self.repo_id, 'action':'downloaded',
                             'value':1})
 
-class ProgressInit(object):
+class ProgressCallback(object):
 
     def __init__(self, repo_id, queue):
         self.repo_id = repo_id
         self.queue = queue
 
-    def register(self, numpkgs):
-        self.queue.put({'repo_id':self.repo_id, 'action':'init',
-                        'value':numpkgs})
+    def send(self, message):
+        action, value = message
+        self.queue.put({'repo_id':self.repo_id, 'action': action, 
+                        'value':value})
