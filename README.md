@@ -7,8 +7,28 @@ What does it do?
 ----------------
 
 * You invoke pakrat and pass it some information about your repositories.
-* Pakrat mirrors the YUM repositories, and optionally arranges the
-  data in a versioned manner.
+* Pakrat mirrors the YUM repositories, and optionally arranges the data in a
+  versioned manner.
+
+It is easiest to demonstrate what Pakrat does by shell example:
+```
+$ pakrat \
+>   --name os \
+>   --baseurl http://mirror.centos.org/centos/6/os/x86_64 \
+>   --name updates \
+>   --baseurl http://mirror.centos.org/centos/6/updates/x86_64 \
+>   --name extras \
+>   --baseurl http://mirror.centos.org/centos/6/extras/x86_64
+
+  repo              done/total       complete
+  -------------------------------------------
+  extras              13/13          100%
+  os                 357/6381        5%
+  updates            112/1100        10%
+
+  total:             482/7494        6%
+
+```
 
 Features
 --------
@@ -18,7 +38,7 @@ Features
 * Mirror YUM group metadata
 * Supports standard YUM configuration files
 * Supports YUM configuration directories (repos.d style)
-* Command-line interface
+* Command-line interface with real-time progress indicator
 * Parallel repository downloads for maximum effeciency
 
 Installation

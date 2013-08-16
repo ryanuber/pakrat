@@ -75,7 +75,7 @@ class Progress(object):
     def formatted(self):
         sys.stdout.write('\033[F\033[K' * self.prevlines)
         self.prevlines = 3  # start with 3 to compensate for header
-        header = self.format_line('repo', '%5s/%-10s' % ('done', 'totalpkgs'),
+        header = self.format_line('repo', '%5s/%-10s' % ('done', 'total'),
                                   'complete')
         sys.stdout.write('\n%s\n' % header)
         sys.stdout.write('  %s\n' % ('-' * (len(header)-2)))
