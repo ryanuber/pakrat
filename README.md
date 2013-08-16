@@ -20,11 +20,11 @@ $ pakrat \
 >   --name extras \
 >   --baseurl http://mirror.centos.org/centos/6/extras/x86_64
 
-  repo              done/total       complete
-  -------------------------------------------
-  extras              13/13          100%
-  os                 357/6381        5%
-  updates            112/1100        10%
+  repo              done/total       complete    metadata
+  -------------------------------------------------------
+  extras              13/13          100%        complete  
+  os                 357/6381        5%          -         
+  updates            112/1100        10%         -         
 
   total:             482/7494        6%
 

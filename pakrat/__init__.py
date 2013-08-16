@@ -97,8 +97,12 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
                 prog.update(e['repo_id'], set_total=e['value'])
             elif e['action'] == 'downloaded' and e.has_key('value'):
                 prog.update(e['repo_id'], add_downloaded=e['value'])
-            elif e['action'] == 'completed':
-                prog.update(e['repo_id'], set_complete=True)
+            elif e['action'] == 'dlcomplete':
+                prog.update(e['repo_id'], set_dlcomplete=True)
+            elif e['action'] == 'mdworking':
+                prog.update(e['repo_id'], set_repomd='working')
+            elif e['action'] == 'mdcomplete':
+                prog.update(e['repo_id'], set_repomd='complete')
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)

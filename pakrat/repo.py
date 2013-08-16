@@ -119,7 +119,7 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         callback.send(('init', len(packages)))
     yb.downloadPkgs(packages)
     if callback:
-        callback.send(('completed', None)) # 100% downloaded
+        callback.send(('dlcomplete', None)) # 100% downloaded
     if delete:
         package_names = []
         for package in packages:
@@ -146,7 +146,11 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
+    if callback:
+        callback.send(('mdworking', None)) # Creating metadata
     create_metadata(repo, pkglist, comps)
+    if callback:
+        callback.send(('mdcomplete', None))
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)

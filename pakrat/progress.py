@@ -11,19 +11,21 @@ class Progress(object):
         self.start = datetime.datetime.now()
 
     def update(self, repo_id, set_total=None, add_downloaded=None,
-               set_complete=None):
+               set_dlcomplete=None, set_repomd=None):
         if not self.repos.has_key(repo_id):
-            self.repos[repo_id] = {'numpkgs':0, 'dlpkgs':0}
+            self.repos[repo_id] = {'numpkgs':0, 'dlpkgs':0, 'repomd':'-'}
         if set_total:
             self.repos[repo_id]['numpkgs'] = set_total
             self.totals['numpkgs'] += set_total
         if add_downloaded:
             self.repos[repo_id]['dlpkgs'] += add_downloaded
             self.totals['dlpkgs'] += add_downloaded
-        if set_complete:
+        if set_dlcomplete:
             self.totals['dlpkgs'] += (self.repos[repo_id]['numpkgs'] -
                                       self.repos[repo_id]['dlpkgs'])
             self.repos[repo_id]['dlpkgs'] = self.repos[repo_id]['numpkgs']
+        if set_repomd:
+            self.repos[repo_id]['repomd'] = set_repomd
         self.formatted()
 
     @staticmethod
@@ -33,8 +35,9 @@ class Progress(object):
     def elapsed(self):
         return str(datetime.datetime.now() - self.start).split('.')[0]
 
-    def format_line(self, reponame, package_counts, percent):
-        return '  %-15s  %-15s  %s' % (reponame, package_counts, percent)
+    def format_line(self, reponame, package_counts, percent, repomd):
+        return '  %-15s  %-15s  %-10s  %s' % (reponame, package_counts, percent,
+                                              repomd)
 
     def represent_repo_pkgs(self, repo_id):
         numpkgs = self.repos[repo_id]['numpkgs']
@@ -68,15 +71,19 @@ class Progress(object):
         else:
             return '%s%%' % self.pct(dlpkgs, numpkgs)
 
+    def represent_repomd(self, repo_id):
+        return self.repos[repo_id]['repomd']
+
     def represent_repo(self, repo_id):
         return self.format_line(repo_id, self.represent_repo_pkgs(repo_id),
-                                self.represent_repo_percent(repo_id))
+                                self.represent_repo_percent(repo_id),
+                                self.represent_repomd(repo_id))
 
     def formatted(self):
         sys.stdout.write('\033[F\033[K' * self.prevlines)
         self.prevlines = 3  # start with 3 to compensate for header
         header = self.format_line('repo', '%5s/%-10s' % ('done', 'total'),
-                                  'complete')
+                                  'complete', 'metadata')
         sys.stdout.write('\n%s\n' % header)
         sys.stdout.write('  %s\n' % ('-' * (len(header)-2)))
         for repo_id in self.repos.keys():
@@ -84,15 +91,10 @@ class Progress(object):
             self.prevlines += 1
         sys.stdout.write('\n')
         sys.stdout.write(self.format_line('total:', self.represent_total_pkgs(),
-                                          self.represent_total_percent()))
+                                          self.represent_total_percent(), ''))
         sys.stdout.write('\n')
         self.prevlines += 2
         sys.stdout.flush()
-
-    def complete_all(self):
-        for repo_id in self.repos.keys():
-            self.repos[repo_id]['dlpkgs'] = self.repos[repo_id]['numpkgs']
-        self.formatted()
 
 class YumProgress(object):
 
