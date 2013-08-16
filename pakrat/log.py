@@ -28,7 +28,8 @@ def write(message):
     This should have a way of reading or accepting the logging level, but I have
     not yet found a good way of doing this without introducing state.
     """
-    print message
+    pass
+    #print message
 
 def debug(message):
     """ Record a debugging message. """

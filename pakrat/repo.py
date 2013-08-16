@@ -84,8 +84,8 @@ def create_metadata(repo, packages=None, comps=None):
     if comps and os.path.exists(groupdir):
         shutil.rmtree(groupdir)
 
-def sync(repo, dest, version, delete=False, initcallback=None,
-         yumcallback=None):
+def sync(repo, dest, version, delete=False, yumcallback=None,
+         initcallback=None):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -116,7 +116,7 @@ def sync(repo, dest, version, delete=False, initcallback=None,
         log.error(e)
         return False
     if initcallback:
-        initcallback(repo, set_total=len(packages))
+        initcallback.register(len(packages))
     yb.downloadPkgs(packages)
     if delete:
         package_names = []
