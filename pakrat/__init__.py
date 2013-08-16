@@ -27,7 +27,7 @@ import sys
 import multiprocessing
 import signal
 import urlparse
-from pakrat import util, log, repo, repos
+from pakrat import util, log, repo, repos, progress
 
 __version__ = '0.2.5'
 
@@ -53,11 +53,13 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
     for _dir in repodirs:
         objrepos += repos.from_dir(_dir)
 
+    callback = progress.Progress()
+
     processes = []
     for objrepo in objrepos:
         dest = util.get_repo_dir(basedir, objrepo.id)
         p = multiprocessing.Process(target=repo.sync, args=(objrepo, dest,
-                                    repoversion, delete))
+                                    repoversion, delete, callback.update))
         p.start()
         processes.append(p)
 
