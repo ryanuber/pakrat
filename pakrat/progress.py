@@ -5,6 +5,7 @@ class Progress(object):
 
     repos = {}
     total = {'dlpkgs':0, 'numpkgs':0}
+    prevlines = 0
 
     def __init__(self):
         self.start = datetime.datetime.now()
@@ -32,23 +33,27 @@ class Progress(object):
     def elapsed(self):
         return str(datetime.datetime.now() - self.start).split('.')[0]
 
+    def format_line(self, reponame, downloaded, total, percent):
+        return '  %-15s  %5s/%-10s  %s' % (reponame, downloaded, total,
+                                           percent)
+
     def repostr(self, repo):
-        return '  %-15s  %5s/%-10s  %s' % (
-            repo,
-            self.repos[repo]['dlpkgs'],
-            self.repos[repo]['numpkgs'],
-            '%d%%' % self.pct(self.repos[repo]['dlpkgs'],
-                              self.repos[repo]['numpkgs'])
-        )
+        percent = '%s%%' % self.pct(self.repos[repo]['dlpkgs'],
+                                    self.repos[repo]['numpkgs'])
+        return self.format_line(repo, self.repos[repo]['dlpkgs'],
+                                self.repos[repo]['numpkgs'], percent)
 
     def formatted(self):
-        lines = 0
+        sys.stdout.write('\033[F' * self.prevlines)
+        self.prevlines = 3  # start with 3 to compensate for header
+        header = self.format_line('repo', 'done', 'totalpkgs',
+                                  'complete')
+        sys.stdout.write('\n%s\n' % header)
+        sys.stdout.write('%s\n' % ('-' * len(header)))
         for repo in self.repos.keys():
             sys.stdout.write('\033[K')
             sys.stdout.write('%s\n' % self.repostr(repo))
-            lines += 1
-        for line in range(0, lines):
-            sys.stdout.write('\033[F')
+            self.prevlines += 1
         sys.stdout.flush()
 
 class repo(object):
