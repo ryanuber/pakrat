@@ -80,6 +80,8 @@ class Progress(object):
                                 self.represent_repomd(repo_id))
 
     def formatted(self):
+        if not sys.stdout.isatty():
+            return
         sys.stdout.write('\033[F\033[K' * self.prevlines)
         self.prevlines = 3  # start with 3 to compensate for header
         header = self.format_line('repo', '%5s/%-10s' % ('done', 'total'),

@@ -40,6 +40,7 @@ Features
 * Supports YUM configuration directories (repos.d style)
 * Command-line interface with real-time progress indicator
 * Parallel repository downloads for maximum effeciency
+* Syslog integration
 
 Installation
 ------------
@@ -170,7 +171,6 @@ rpmbuild -tb pakrat.tar.gz
 What's missing
 --------------
 
-* Better logging (currently console-only)
 * Optional "all" repository containing all known versions
 * Combined repositories?
 

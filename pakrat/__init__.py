@@ -107,4 +107,4 @@ def sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
             if not p.is_alive():
                 processes.remove(p)
 
-    #prog.complete_all()
+    print 'Finished in %s' % prog.elapsed()
