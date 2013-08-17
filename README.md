@@ -41,6 +41,7 @@ Features
 * Command-line interface with real-time progress indicator
 * Parallel repository downloads for maximum effeciency
 * Syslog integration
+* Supports user-specified callbacks
 
 Installation
 ------------
@@ -151,6 +152,94 @@ Another handy python method is `pakrat.repo.factory`, which creates YUM
 repository objects so that no file-based configuration is needed.
 ```
 pakrat.factory(name, baseurls=None, mirrorlist=None)
+```
+
+User-defined callbacks
+----------------------
+
+Since the YUM team did a decent job at externalizing the progress data,
+pakrat will return the favor by exposing the same data, plus some extras
+via user callbacks.
+
+A user callback is a simple class that implements some methods for handling
+received data. It is not mandatory to implement any of the methods.
+
+A few of the available user callbacks in pakrat come directly from the
+`urlgrabber` interface (namely, any user callback beginning with `download_`.
+The other methods are called by pakrat, which explains why the interfaces
+are varied.
+
+The following user callbacks are supported:
+
+* `repo_init(repo_id, num_pkgs)`: Called when the number of packages a
+  repository contains becomes known
+* `repo_metadata(repo_id, status)`: Called when `createrepo` begins
+  running and when it completes. `status` will be a string containing
+  either "working" or "complete".
+* `repo_complete(repo_id)`: Called when a repository finishes downloading
+  all packages.
+* `download_start(repo_id, fpath, url, fname, fsize, text)`: Called when
+  a file begins downloading. Note that this will not return only RPM
+  packages but also repodata files etc.
+* `download_update(repo_id, size)`: Called throughout the course of a
+  file download. `size` is the amount of data downloaded so far in bytes.
+* `download_end(repo_id, size)`: Called when a file download completes.
+  `size` is the total size downloaded.
+
+The following is a basic example of how to use user callbacks in pakrat.
+Note that an instance of the class is passed into the `pakrat.sync()` call
+as an argument, called `callback`.
+
+```
+import pakrat
+
+class mycallback(object):
+    def log(self, msg):
+        with open('log.txt', 'a') as logfile:
+            logfile.write('%s\n' % msg)
+
+    def repo_init(self, repo_id, num_pkgs):
+        self.log('Found %d packages in repo %s' % (num_pkgs, repo_id))
+
+    def download_start(self, repo_id, _file, url, basename, size, text):
+        self.fname = basename
+
+    def download_end(self, repo_id, size):
+        if self.fname.endswith('.rpm'):
+            self.log('%s, repo %s, size %d' % (self.fname, repo_id, size))
+
+    def repo_metadata(self, repo_id, status):
+        self.log('Metadata for repo %s is now %s' % (repo_id, status))
+
+myrepo = pakrat.repo.factory(
+    'extras',
+    mirrorlist='http://mirrorlist.centos.org/?repo=extras&release=6&arch=x86_64'
+)
+
+mycallback_instance = mycallback()
+pakrat.sync(objrepos=[myrepo], callback=mycallback_instance)
+```
+
+If you run the above example, and then take a look in the `log.txt` file (which
+the user callbacks should have created), you will see something like:
+
+```
+Found 13 packages in repo extras
+bakefile-0.2.8-3.el6.centos.x86_64.rpm, repo extras, size 256356
+centos-release-cr-6-0.el6.centos.x86_64.rpm, repo extras, size 3996
+centos-release-xen-6-2.el6.centos.x86_64.rpm, repo extras, size 4086
+freenx-0.7.3-9.4.el6.centos.x86_64.rpm, repo extras, size 99256
+jfsutils-1.1.13-9.el6.x86_64.rpm, repo extras, size 244104
+nx-3.5.0-2.1.el6.centos.x86_64.rpm, repo extras, size 2807864
+opennx-0.16-724.el6.centos.1.x86_64.rpm, repo extras, size 1244240
+python-empy-3.3-5.el6.centos.noarch.rpm, repo extras, size 104632
+wxBase-2.8.12-1.el6.centos.x86_64.rpm, repo extras, size 586068
+wxGTK-2.8.12-1.el6.centos.x86_64.rpm, repo extras, size 3081804
+wxGTK-devel-2.8.12-1.el6.centos.x86_64.rpm, repo extras, size 1005036
+wxGTK-gl-2.8.12-1.el6.centos.x86_64.rpm, repo extras, size 31824
+wxGTK-media-2.8.12-1.el6.centos.x86_64.rpm, repo extras, size 38644
+Metadata for repo extras is now working
+Metadata for repo extras is now complete
 ```
 
 Building an RPM

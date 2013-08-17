@@ -100,28 +100,52 @@ class Progress(object):
 
 class YumProgress(object):
 
-    def __init__(self, repo_id, queue):
+    def __init__(self, repo_id, queue, usercallback):
         self.repo_id = repo_id
         self.queue = queue
+        self.usercallback = usercallback
+
+    def callback(self, method, *args):
+        if self.usercallback and hasattr(self.usercallback, method):
+            method = getattr(self.usercallback, method)
+            try: method(self.repo_id, *args)
+            except: pass
 
     def start(self, _file, url, basename, size, text):
         self._file = _file
+        self.callback('download_start', _file, url, basename, size, text)
 
     def update(self, size):
-        pass
+        self.callback('download_update', size)
 
     def end(self, size):
         if self._file.endswith('.rpm'):
-            self.queue.put({'repo_id':self.repo_id, 'action':'downloaded',
+            self.queue.put({'repo_id':self.repo_id, 'action':'download_end',
                             'value':1})
+        self.callback('download_end', size)
 
 class ProgressCallback(object):
 
-    def __init__(self, repo_id, queue):
-        self.repo_id = repo_id
+    def __init__(self, queue, usercallback):
         self.queue = queue
+        self.usercallback = usercallback
 
-    def send(self, message):
-        action, value = message
-        self.queue.put({'repo_id':self.repo_id, 'action': action, 
+    def callback(self, repo_id, event, value):
+        if self.usercallback and hasattr(self.usercallback, event):
+            method = getattr(self.usercallback, event)
+            try: method(repo_id, value)
+            except: pass
+
+    def send(self, repo_id, action, value=None):
+        self.queue.put({'repo_id':repo_id, 'action': action, 
                         'value':value})
+        self.callback(repo_id, action, value)
+
+    def repo_metadata(self, repo_id, value):
+        self.send(repo_id, 'repo_metadata', value)
+
+    def repo_init(self, repo_id, numpkgs):
+        self.send(repo_id, 'repo_init', numpkgs)
+
+    def repo_complete(self, repo_id):
+        self.send(repo_id, 'repo_complete')

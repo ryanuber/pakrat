@@ -85,7 +85,7 @@ def create_metadata(repo, packages=None, comps=None):
         shutil.rmtree(groupdir)
 
 def sync(repo, dest, version, delete=False, yumcallback=None,
-         callback=None):
+         repocallback=None):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -115,11 +115,12 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
     except yum.Errors.RepoError, e:
         log.error(e)
         return False
-    if callback:
-        callback.send(('init', len(packages)))
+
+    # Send number of packages to download
+    callback(repocallback, repo, 'repo_init', len(packages))
     yb.downloadPkgs(packages)
-    if callback:
-        callback.send(('dlcomplete', None)) # 100% downloaded
+    callback(repocallback, repo, 'repo_complete')
+
     if delete:
         package_names = []
         for package in packages:
@@ -146,12 +147,21 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
-    if callback:
-        callback.send(('mdworking', None)) # Creating metadata
+
+    # Begin creating metadata
+    callback(repocallback, repo, 'repo_metadata', 'working')
     create_metadata(repo, pkglist, comps)
-    if callback:
-        callback.send(('mdcomplete', None))
+    callback(repocallback, repo, 'repo_metadata', 'complete')
+
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)
         util.symlink(latest_symlink, version)
+
+def callback(callback_obj, repo, event, data=None):
+    if callback_obj and hasattr(callback_obj, event):
+        method = getattr(callback_obj, event)
+        if data:
+            method(repo.id, data)
+        else:
+            method(repo.id)
