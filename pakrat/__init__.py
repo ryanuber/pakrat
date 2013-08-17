@@ -108,6 +108,8 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
                 prog.update(e['repo_id'], repo_complete=True)
             elif e['action'] == 'repo_metadata':
                 prog.update(e['repo_id'], repo_metadata=e['value'])
+            elif e['action'] == 'repo_error':
+                prog.update(e['repo_id'], repo_error=e['value'])
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)

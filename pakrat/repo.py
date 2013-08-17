@@ -112,12 +112,22 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         # showdups allows us to get multiple versions of the same package.
         ygh = yb.doPackageLists(showdups=True)
         packages = ygh.available + ygh.reinstall_available
-    except yum.Errors.RepoError, e:
-        log.error(e)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception, e:
+        callback(repocallback, repo, 'repo_error', str(e))
+        log.error(str(e))
         return False
 
     callback(repocallback, repo, 'repo_init', len(packages))  # total repo pkgs
-    yb.downloadPkgs(packages)
+    try:
+        yb.downloadPkgs(packages)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception, e:
+        callback(repocallback, repo, 'repo_error', str(e))
+        log.error(str(e))
+        return False
     callback(repocallback, repo, 'repo_complete')
 
     if delete:

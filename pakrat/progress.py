@@ -36,6 +36,7 @@ class Progress(object):
     """
     repos = {}
     totals = {'numpkgs':0, 'dlpkgs':0}
+    errors = []
     prevlines = 0
 
     def __init__(self):
@@ -43,7 +44,7 @@ class Progress(object):
         self.start = datetime.datetime.now()
 
     def update(self, repo_id, set_total=None, pkgs_downloaded=None,
-               repo_complete=None, repo_metadata=None):
+               repo_complete=None, repo_metadata=None, repo_error=None):
         """ Handles updating the object itself.
 
         This method will be called any time the number of packages in
@@ -64,6 +65,8 @@ class Progress(object):
             self.repos[repo_id]['dlpkgs'] = self.repos[repo_id]['numpkgs']
         if repo_metadata:
             self.repos[repo_id]['repomd'] = repo_metadata
+        if repo_error:
+            self.errors.append((repo_id, repo_error))
         self.formatted()
 
     @staticmethod
@@ -85,8 +88,8 @@ class Progress(object):
         Since there is a common column layout in the progress indicator, we can
         we can implement the printf-style formatter in a function.
         """
-        return '  %-15s  %-15s  %-10s  %s' % (reponame, package_counts, percent,
-                                              repomd)
+        return '%-15s  %-15s  %-10s  %s' % (reponame, package_counts, percent,
+                                            repomd)
 
     def represent_repo_pkgs(self, repo_id):
         """ Format the ratio of packages in a repository. """
@@ -148,6 +151,10 @@ class Progress(object):
                                 self.represent_repo_percent(repo_id),
                                 self.represent_repomd(repo_id))
 
+    def emit(self, line=''):
+        self.prevlines += len(line.split('\n'))
+        sys.stdout.write('%s\n' % line)
+
     def formatted(self):
         """ Print all known progress data in a nicely formatted table.
 
@@ -155,23 +162,43 @@ class Progress(object):
         backtrack over the console screen, clearing out the previous flush and
         printing out a new one. This method is called any time any value is
         updated, which is what gives us that real-time feeling.
+
+        Unforutnately, the YUM library calls print directly rather than just
+        throwing exceptions and handling them in the presentation layer, so
+        this means that pakrat's output will be slightly flawed if YUM prints
+        something directly to the screen from a worker process.
         """
         if not sys.stdout.isatty():
             return
-        sys.stdout.write('\033[F\033[K' * self.prevlines)
-        self.prevlines = 3  # start with 3 to compensate for header
+        sys.stdout.write('\033[F\033[K' * self.prevlines)  # clears lines
+        self.prevlines = 0  # reset line counter
         header = self.format_line('repo', '%5s/%-10s' % ('done', 'total'),
                                   'complete', 'metadata')
-        sys.stdout.write('\n%s\n' % header)
-        sys.stdout.write('  %s\n' % ('-' * (len(header)-2)))
+        self.emit('\n%s\n' % header)
+        self.emit(('-' * len(header)))
+
+        # Remove repos with errors from totals
+        if len(self.errors) > 0:
+            for repo_id, error in self.errors:
+                if repo_id in self.repos.keys():
+                    self.totals['dlpkgs'] -= self.repos[repo_id]['dlpkgs']
+                    self.totals['numpkgs'] -= self.repos[repo_id]['numpkgs']
+                    del self.repos[repo_id]
+
         for repo_id in self.repos.keys():
-            sys.stdout.write('%s\n' % self.represent_repo(repo_id))
-            self.prevlines += 1
-        sys.stdout.write('\n')
-        sys.stdout.write(self.format_line('total:', self.represent_total_pkgs(),
-                                          self.represent_total_percent(), ''))
-        sys.stdout.write('\n')
-        self.prevlines += 2
+            self.emit(self.represent_repo(repo_id))
+        self.emit()
+        self.emit(self.format_line('total:', self.represent_total_pkgs(),
+                                   self.represent_total_percent(), ''))
+        self.emit()
+
+        # Append errors to output if any found.
+        if len(self.errors) > 0:
+            self.emit('errors:')
+            for repo_id, error in self.errors:
+                self.emit(error)
+        self.emit()
+
         sys.stdout.flush()
 
 class YumProgress(object):
@@ -273,3 +300,7 @@ class ProgressCallback(object):
     def repo_complete(self, repo_id):
         """ Called when a repository completes downloading all packages. """
         self.send(repo_id, 'repo_complete')
+
+    def repo_error(self, repo_id, error):
+        """ Called when a repository throws a RepoError """
+        self.send(repo_id, 'repo_error', error)
