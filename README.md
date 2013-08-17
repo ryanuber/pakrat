@@ -185,7 +185,7 @@ The following is a basic example of how to use user callbacks in pakrat.
 Note that an instance of the class is passed into the `pakrat.sync()` call
 as an argument, called `callback`.
 
-```
+```python
 import pakrat
 
 class mycallback(object):
