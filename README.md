@@ -187,7 +187,7 @@ download_end(repo_id, size)
 
 The following is a basic example of how to use user callbacks in pakrat.
 Note that an instance of the class is passed into the `pakrat.sync()` call
-as an argument, called `callback`.
+as the named argument `callback`.
 
 ```python
 import pakrat
