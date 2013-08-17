@@ -138,15 +138,16 @@ Configuration can also be passed in from YUM configuration files. See the CLI
 Pakrat also exposes its interfaces in plain python for integration with other
 projects and software. A good starting point for using Pakrat via the python
 API is to take a look at the `pakrat.sync` method. The CLI calls this method
-almost exclusively, so it should be fairly straightforward in its usage:
+almost exclusively, so it should be fairly straightforward in its usage (all
+arguments are named and optional):
 ```
-pakrat.sync(basedir, objrepos=[], repodirs=[], repofiles=[], repoversion=None, delete=False)
+pakrat.sync(basedir, objrepos, repodirs, repofiles, repoversion, delete, callback)
 ```
 
 Another handy python method is `pakrat.repo.factory`, which creates YUM
 repository objects so that no file-based configuration is needed.
 ```
-pakrat.factory(name, baseurls=None, mirrorlist=None)
+pakrat.repo.factory(name, baseurls=None, mirrorlist=None)
 ```
 
 User-defined callbacks
@@ -174,6 +175,9 @@ repo_metadata(repo_id, status)
 
 """ Called when a repository finishes downloading all packages """
 repo_complete(repo_id)
+
+""" Called whenever an exception is thrown from a repo thread """
+repo_error(repo_id, error)
 
 """ Called when a file begins downloading (non-exclusive) """
 download_start(repo_id, fpath, url, fname, fsize, text)

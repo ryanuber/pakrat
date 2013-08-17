@@ -23,10 +23,12 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
+import sys
 import tempfile
 import shutil
 import yum
 import createrepo
+from contextlib import contextmanager
 from pakrat import util, log
 
 def factory(name, baseurls=None, mirrorlist=None):
@@ -94,6 +96,22 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
     which are not present in the remote repository will be deleted.
     """
     util.make_dir(util.get_packages_dir(dest))  # Make package storage dir
+
+    @contextmanager
+    def suppress():
+        """ Suppress stdout within a context.
+
+        This is necessary in this use case because, unfortunately, the YUM
+        library will do direct printing to stdout in many error conditions.
+        Since we are maintaining a real-time, in-place updating presentation
+        of progress, we must suppress this, as we receive exceptions for our
+        reporting purposes anyways.
+        """
+        stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        yield
+        sys.stdout = stdout
+
     if version:
         dest_dir = util.get_versioned_dir(dest, version)
         util.make_dir(dest_dir)
@@ -109,11 +127,12 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
             repo.setCallback(yumcallback)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
-        # showdups allows us to get multiple versions of the same package.
-        ygh = yb.doPackageLists(showdups=True)
+        with suppress():
+            # showdups allows us to get multiple versions of the same package.
+            ygh = yb.doPackageLists(showdups=True)
         packages = ygh.available + ygh.reinstall_available
-    except (KeyboardInterrupt, SystemExit):
-        raise
+    except (KeyboardInterrupt, SystemExit), e:
+        raise e
     except Exception, e:
         callback(repocallback, repo, 'repo_error', str(e))
         log.error(str(e))
@@ -121,7 +140,8 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
 
     callback(repocallback, repo, 'repo_init', len(packages))  # total repo pkgs
     try:
-        yb.downloadPkgs(packages)
+        with suppress():
+            yb.downloadPkgs(packages)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception, e:

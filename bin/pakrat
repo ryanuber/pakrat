@@ -35,7 +35,12 @@ parser = OptionParser(version='pakrat %s' % pakrat.__version__,
         'url. The "--name" and "--url" options may be repeated',
         'to declare multiple repositories. Repository names and',
         'URLs are matched up according to their position on the',
-        'command line.'
+        'command line.',
+        '',
+        'The exit code will be one of:',
+        '   0: All repos successfully synced',
+        '   1: All repos failed to sync',
+        '   2: Some repos failed to sync, others succeeded.'
     ]))
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
@@ -72,7 +77,7 @@ if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
     sys.exit(1)
 
-pakrat.sync(
+numrepos, numfails, elapsed = pakrat.sync(
     basedir=options.outdir,
     repoversion=options.repoversion,
     objrepos=repos,
@@ -80,3 +85,12 @@ pakrat.sync(
     repodirs=options.repodir,
     delete=options.delete
 )
+
+print 'Finished in %s' % elapsed
+
+if numfails == 0:
+    sys.exit(0)
+elif numrepos == numfails:
+    sys.exit(1)
+else:
+    sys.exit(2)

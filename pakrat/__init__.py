@@ -85,7 +85,7 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
                 os.kill(p.pid, signal.SIGKILL)
                 if not p.is_alive():
                     processes.remove(p)
-        sys.exit(1)
+        sys.exit(1)  # safe to do exit() here because we are a worker
 
     # Catch user-cancelled or killed signals to terminate threads.
     signal.signal(signal.SIGINT, stop)
@@ -114,4 +114,5 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
             if not p.is_alive():
                 processes.remove(p)
 
-    print 'Finished in %s' % prog.elapsed()
+    # Return tuple (#repos, #fail, elapsed time)
+    return (len(objrepos), prog.totals['errors'], prog.elapsed())

@@ -35,7 +35,7 @@ class Progress(object):
     display aggregated status of multiple repositories during a sync.
     """
     repos = {}
-    totals = {'numpkgs':0, 'dlpkgs':0}
+    totals = {'numpkgs':0, 'dlpkgs':0, 'errors':0}
     errors = []
     prevlines = 0
 
@@ -66,6 +66,7 @@ class Progress(object):
         if repo_metadata:
             self.repos[repo_id]['repomd'] = repo_metadata
         if repo_error:
+            self.totals['errors'] += 1
             self.errors.append((repo_id, repo_error))
         self.formatted()
 
@@ -147,9 +148,15 @@ class Progress(object):
         This makes calls to the other methods of this class to create a
         formatted string, which makes nice columns.
         """
-        return self.format_line(repo_id, self.represent_repo_pkgs(repo_id),
-                                self.represent_repo_percent(repo_id),
-                                self.represent_repomd(repo_id))
+        if self.repos[repo_id].has_key('error'):
+            packages = '     error'
+            percent  = ''
+            metadata = ''
+        else:
+            packages = self.represent_repo_pkgs(repo_id)
+            percent  = self.represent_repo_percent(repo_id)
+            metadata = self.represent_repomd(repo_id)
+        return self.format_line(repo_id, packages, percent, metadata)
 
     def emit(self, line=''):
         self.prevlines += len(line.split('\n'))
@@ -174,16 +181,17 @@ class Progress(object):
         self.prevlines = 0  # reset line counter
         header = self.format_line('repo', '%5s/%-10s' % ('done', 'total'),
                                   'complete', 'metadata')
-        self.emit('\n%s\n' % header)
+        self.emit('\n%s' % header)
         self.emit(('-' * len(header)))
 
         # Remove repos with errors from totals
-        if len(self.errors) > 0:
+        if self.totals['errors'] > 0:
             for repo_id, error in self.errors:
                 if repo_id in self.repos.keys():
                     self.totals['dlpkgs'] -= self.repos[repo_id]['dlpkgs']
                     self.totals['numpkgs'] -= self.repos[repo_id]['numpkgs']
-                    del self.repos[repo_id]
+                    #del self.repos[repo_id]
+                    self.repos[repo_id]['error'] = True
 
         for repo_id in self.repos.keys():
             self.emit(self.represent_repo(repo_id))
@@ -193,11 +201,11 @@ class Progress(object):
         self.emit()
 
         # Append errors to output if any found.
-        if len(self.errors) > 0:
-            self.emit('errors:')
+        if self.totals['errors'] > 0:
+            self.emit('errors(%d):' % self.totals['errors'])
             for repo_id, error in self.errors:
                 self.emit(error)
-        self.emit()
+            self.emit()
 
         sys.stdout.flush()
 
@@ -302,5 +310,5 @@ class ProgressCallback(object):
         self.send(repo_id, 'repo_complete')
 
     def repo_error(self, repo_id, error):
-        """ Called when a repository throws a RepoError """
+        """ Called when a repository throws an exception. """
         self.send(repo_id, 'repo_error', error)
