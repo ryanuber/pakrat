@@ -12,19 +12,13 @@ What does it do?
 
 It is easiest to demonstrate what Pakrat does by shell example:
 ```
-$ pakrat \
->   --name os \
->   --baseurl http://mirror.centos.org/centos/6/os/x86_64 \
->   --name updates \
->   --baseurl http://mirror.centos.org/centos/6/updates/x86_64 \
->   --name extras \
->   --baseurl http://mirror.centos.org/centos/6/extras/x86_64
+$ pakrat --repodir /etc/yum.repos.d
 
   repo              done/total       complete    metadata
   -------------------------------------------------------
-  extras              13/13          100%        complete  
-  os                 357/6381        5%          -         
+  base               357/6381        5%          -         
   updates            112/1100        10%         -         
+  extras              13/13          100%        complete  
 
   total:             482/7494        6%
 
@@ -38,6 +32,7 @@ Features
 * Mirror YUM group metadata
 * Supports standard YUM configuration files
 * Supports YUM configuration directories (repos.d style)
+* Supports command-line repos for zero-configuration (`--name` and `--baseurl`)
 * Command-line interface with real-time progress indicator
 * Parallel repository downloads for maximum effeciency
 * Syslog integration
