@@ -164,22 +164,26 @@ A few of the available user callbacks in pakrat come directly from the
 The other methods are called by pakrat, which explains why the interfaces
 are varied.
 
-The following user callbacks are supported:
+The supported user callbacks are listed in the following method signatures:
+```python
+""" Called when the number of packages a repository contains becomes known """
+repo_init(repo_id, num_pkgs)
 
-* `repo_init(repo_id, num_pkgs)`: Called when the number of packages a
-  repository contains becomes known
-* `repo_metadata(repo_id, status)`: Called when `createrepo` begins
-  running and when it completes. `status` will be a string containing
-  either "working" or "complete".
-* `repo_complete(repo_id)`: Called when a repository finishes downloading
-  all packages.
-* `download_start(repo_id, fpath, url, fname, fsize, text)`: Called when
-  a file begins downloading. Note that this will not return only RPM
-  packages but also repodata files etc.
-* `download_update(repo_id, size)`: Called throughout the course of a
-  file download. `size` is the amount of data downloaded so far in bytes.
-* `download_end(repo_id, size)`: Called when a file download completes.
-  `size` is the total size downloaded.
+""" Called when 'createrepo' begins running and when it completes """
+repo_metadata(repo_id, status)
+
+""" Called when a repository finishes downloading all packages """
+repo_complete(repo_id)
+
+""" Called when a file begins downloading (non-exclusive) """
+download_start(repo_id, fpath, url, fname, fsize, text)
+
+""" Called during downloads, 'size' is bytes downloaded """
+download_update(repo_id, size)
+
+""" Called when a file download completes, 'size' is file size in bytes """
+download_end(repo_id, size)
+```
 
 The following is a basic example of how to use user callbacks in pakrat.
 Note that an instance of the class is passed into the `pakrat.sync()` call
