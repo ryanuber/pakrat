@@ -116,8 +116,7 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         log.error(e)
         return False
 
-    # Send number of packages to download
-    callback(repocallback, repo, 'repo_init', len(packages))
+    callback(repocallback, repo, 'repo_init', len(packages))  # total repo pkgs
     yb.downloadPkgs(packages)
     callback(repocallback, repo, 'repo_complete')
 
@@ -148,7 +147,7 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
 
-    # Begin creating metadata
+    # createrepo enclosed in callbacks so we know when it starts and ends
     callback(repocallback, repo, 'repo_metadata', 'working')
     create_metadata(repo, pkglist, comps)
     callback(repocallback, repo, 'repo_metadata', 'complete')
@@ -159,6 +158,11 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         util.symlink(latest_symlink, version)
 
 def callback(callback_obj, repo, event, data=None):
+    """ Abstracts calling class callbacks.
+
+    Since callbacks are optional, a function should check if the callback is
+    set or not, and then call it, so we don't repeat this code many times.
+    """
     if callback_obj and hasattr(callback_obj, event):
         method = getattr(callback_obj, event)
         if data:

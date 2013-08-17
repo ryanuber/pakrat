@@ -57,13 +57,12 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
     for _dir in repodirs:
         objrepos += repos.from_dir(_dir)
 
-    prog = progress.Progress()
-
+    prog = progress.Progress()  # callbacks talk to this object
     manager = multiprocessing.Manager()
     queue = manager.Queue()
     processes = []
     for objrepo in objrepos:
-        prog.update(objrepo.id)
+        prog.update(objrepo.id)  # Add the repo to the progress object
         yumcallback = progress.YumProgress(objrepo.id, queue, callback)
         repocallback = progress.ProgressCallback(queue, callback)
         dest = util.get_repo_dir(basedir, objrepo.id)
@@ -93,6 +92,10 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
     signal.signal(signal.SIGTERM, stop)
 
     while len(processes) > 0:
+        # If data is waiting in the queue from the workers, process it. This
+        # needs to be done in the current scope so that one progress object may
+        # hold all of the results. (This might be easier with Python 3's
+        # nonlocal keyword).
         while not queue.empty():
             e = queue.get()
             if not e.has_key('action'):
@@ -100,11 +103,11 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
             if e['action'] == 'repo_init' and e.has_key('value'):
                 prog.update(e['repo_id'], set_total=e['value'])
             elif e['action'] == 'download_end' and e.has_key('value'):
-                prog.update(e['repo_id'], add_downloaded=e['value'])
+                prog.update(e['repo_id'], pkgs_downloaded=e['value'])
             elif e['action'] == 'repo_complete':
-                prog.update(e['repo_id'], set_dlcomplete=True)
+                prog.update(e['repo_id'], repo_complete=True)
             elif e['action'] == 'repo_metadata':
-                prog.update(e['repo_id'], set_repomd=e['value'])
+                prog.update(e['repo_id'], repo_metadata=e['value'])
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)
