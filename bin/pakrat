@@ -80,6 +80,10 @@ if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
     sys.exit(1)
 
+if options.combined and not options.repoversion:
+    print '--combined is only usable with --repoversion.'
+    sys.exit(1)
+
 try:
     numrepos, numfails, elapsed = pakrat.sync(
         basedir=options.outdir,

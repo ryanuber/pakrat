@@ -108,6 +108,11 @@ centos/
 └── Packages
 ```
 
+You can also opt to have a combined repository for each of your repos. This is
+useful because you could simply point your clients to the root of your
+repository, and they will have access to its complete history of RPMs. You can
+do this by passing in the `--combined` option when versioning repositories.
+
 Pakrat is also capable of handling multiple YUM repositories in the same mirror
 run. If multiple repositories are specified, each repository will get its own
 download thread. This is handy if you are syncing from a mirror that is not
@@ -266,10 +271,7 @@ rpmbuild -tb pakrat.tar.gz
 What's missing
 --------------
 
-* Unit tests (preliminary work done in unit_test branch, but I suck at mocking
-  modules. Pretty please finish it for me? :P )
-* Optional "all" repository containing all known versions
-* Combined repositories?
+* Unit tests (preliminary work done in unit_test branch)
 
 Thanks
 ------

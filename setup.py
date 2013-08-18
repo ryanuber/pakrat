@@ -47,8 +47,8 @@ required_module('yum')
 required_module('createrepo')
 
 setup(name='pakrat',
-    version='0.3.1',
-    description='A Python library for mirroring and versioning YUM repositories',
+    version='0.3.2',
+    description='A tool for mirroring and versioning YUM repositories',
     author='Ryan Uber',
     author_email='ru@ryanuber.com',
     url='https://github.com/ryanuber/pakrat',
