@@ -50,17 +50,20 @@ parser.add_option('--name', action='append',
 parser.add_option('--baseurl', action='append',
     help='The baseurl of a repository (repeatable)')
 parser.add_option('--outdir', type='string', default=os.getcwd(),
-    help='The root output directory to store repository data. Default '
-         'is the current working directory.')
+    help='The root output directory to store repository data. Default is the '
+         'current working directory.')
 parser.add_option('--repofile', default=[], action='append',
-    help=('The path to a YUM repository configuration file. '
-         '(repeatable)'))
+    help=('The path to a YUM repository configuration file. (repeatable)'))
 parser.add_option('--repodir', default=[], action='append',
-    help=('The path to a YUM repos.d-style directory of configs '
-          '(repeatable)'))
+    help=('The path to a YUM repos.d-style directory of configs (repeatable)'))
 parser.add_option('--delete', action='store_true', default=False,
     help=('Delete packages that are no longer at the remote source. '
           'This option does nothing if --repoversion is passed.'))
+parser.add_option('--combined', action='store_true', default=False,
+    help=('Create repository metadata for the entire packages directory. '
+          'The resulting repository will be a combined package history of '
+          'all packages ever synced for each repository. Only useful with '
+          'the --repoversion option.'))
 
 options, args = parser.parse_args()
 
@@ -77,14 +80,18 @@ if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
     sys.exit(1)
 
-numrepos, numfails, elapsed = pakrat.sync(
-    basedir=options.outdir,
-    repoversion=options.repoversion,
-    objrepos=repos,
-    repofiles=options.repofile,
-    repodirs=options.repodir,
-    delete=options.delete
-)
+try:
+    numrepos, numfails, elapsed = pakrat.sync(
+        basedir=options.outdir,
+        repoversion=options.repoversion,
+        objrepos=repos,
+        repofiles=options.repofile,
+        repodirs=options.repodir,
+        delete=options.delete,
+        combined=options.combined
+    )
+except:
+    sys.exit(1)
 
 print 'Finished in %s' % elapsed
 

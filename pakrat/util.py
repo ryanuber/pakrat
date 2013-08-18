@@ -28,6 +28,7 @@ from pakrat.yumbase import YumBase
 from pakrat import log
 
 PACKAGESDIR = 'Packages'
+METADATADIR = 'repodata'
 LATESTREPO = 'latest'
 
 def get_yum():
@@ -77,6 +78,10 @@ def get_latest_symlink_path(repodir):
 def get_package_filename(pkg):
     """ From a repository object, return the name of the RPM file. """
     return '%s-%s-%s.%s.rpm' % (pkg.name, pkg.version, pkg.release, pkg.arch)
+
+def get_metadata_dir(repodir):
+    """ Return the path to the repository metadata directory """
+    return os.path.join(repodir, METADATADIR)
 
 def validate_basedir(basedir):
     """ Validate the input of a basedir.

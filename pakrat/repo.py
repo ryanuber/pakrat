@@ -28,6 +28,7 @@ import tempfile
 import shutil
 import yum
 import createrepo
+import copy
 from contextlib import contextmanager
 from pakrat import util, log
 
@@ -53,11 +54,14 @@ def factory(name, baseurls=None, mirrorlist=None):
 def set_path(repo, path):
     """ Set the local filesystem path to use for a repository object. """
     util.validate_repo(repo)
+    result = copy.copy(repo)  # make a copy so the original is untouched
+
     # The following is wrapped in a try-except to suppress an anticipated
     # exception from YUM's yumRepo.py, line 530 and 557.
-    try: repo.pkgdir = path
+    try: result.pkgdir = path
     except yum.Errors.RepoError: pass
-    return repo
+
+    return result
 
 def create_metadata(repo, packages=None, comps=None):
     """ Generate YUM metadata for a repository.
@@ -69,7 +73,8 @@ def create_metadata(repo, packages=None, comps=None):
     conf = createrepo.MetaDataConfig()
     conf.directory = os.path.dirname(repo.pkgdir)
     conf.outputdir = os.path.dirname(repo.pkgdir)
-    conf.pkglist = packages
+    if packages:
+        conf.pkglist = packages
     conf.quiet = True
 
     if comps:
@@ -86,7 +91,33 @@ def create_metadata(repo, packages=None, comps=None):
     if comps and os.path.exists(groupdir):
         shutil.rmtree(groupdir)
 
-def sync(repo, dest, version, delete=False, yumcallback=None,
+def create_combined_metadata(repo, dest, comps=None):
+    """ Creates YUM metadata for the entire Packages directory.
+
+    When used with versioning, this creates a combined repository of all
+    packages ever synced for the repository.
+    """
+    combined_repo = set_path(repo, util.get_packages_dir(dest))
+    create_metadata(combined_repo, None, comps)
+
+def retrieve_group_comps(repo):
+    """ Retrieve group comps XML data from a remote repository.
+
+    This data can be used while running createrepo to provide package groups
+    data that clients can use while installing software.
+    """
+    if repo.enablegroups:
+        try:
+            yb = util.get_yum()
+            yb.repos.add(repo)
+            comps = yb._getGroups().xml()
+            log.info('Group data retrieved for repository %s' % repo.id)
+            return comps
+        except yum.Errors.GroupsError:
+            log.debug('No group data available for repository %s' % repo.id)
+            return None
+
+def sync(repo, dest, version, delete=False, combined=False, yumcallback=None,
          repocallback=None):
     """ Sync repository contents from a remote source.
 
@@ -169,28 +200,25 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
                 os.remove(package_path)
     log.info('Finished downloading packages from repository %s' % repo.id)
 
-    comps = None
-    if repo.enablegroups:
-        try:
-            comps = yb._getGroups().xml()
-            log.info('Group data retrieved for repository %s' % repo.id)
-        except yum.Errors.GroupsError:
-            log.debug('No group data available for repository %s' % repo.id)
-            pass
-
     log.info('Creating metadata for repository %s' % repo.id)
+    callback(repocallback, repo, 'repo_metadata', 'working')
+    comps = retrieve_group_comps(repo)  # try group data
     pkglist = []
     for pkg in packages:
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
 
-    # createrepo enclosed in callbacks so we know when it starts and ends
-    callback(repocallback, repo, 'repo_metadata', 'working')
     create_metadata(repo, pkglist, comps)
+    if combined and version:
+        create_combined_metadata(repo, dest, comps)
+    elif os.path.exists(util.get_metadata_dir(dest)):
+        # At this point the combined metadata is stale, so remove it.
+        log.debug('Removing combined metadata for repository %s' % repo.id)
+        shutil.rmtree(util.get_metadata_dir(dest))
     callback(repocallback, repo, 'repo_metadata', 'complete')
-
     log.info('Finished creating metadata for repository %s' % repo.id)
+
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)
         util.symlink(latest_symlink, version)
