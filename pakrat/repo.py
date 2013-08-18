@@ -151,7 +151,7 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
             yb.downloadPkgs(packages)
 
     except (KeyboardInterrupt, SystemExit):
-        raise
+        pass
     except Exception, e:
         callback(repocallback, repo, 'repo_error', str(e))
         log.error(str(e))
