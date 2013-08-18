@@ -44,7 +44,7 @@ class Progress(object):
         self.start = datetime.datetime.now()
 
     def update(self, repo_id, set_total=None, pkgs_downloaded=None,
-               repo_complete=None, repo_metadata=None, repo_error=None):
+               local_pkg_exists=None, repo_metadata=None, repo_error=None):
         """ Handles updating the object itself.
 
         This method will be called any time the number of packages in
@@ -59,10 +59,6 @@ class Progress(object):
         if pkgs_downloaded:
             self.repos[repo_id]['dlpkgs'] += pkgs_downloaded
             self.totals['dlpkgs'] += pkgs_downloaded
-        if repo_complete:
-            self.totals['dlpkgs'] += (self.repos[repo_id]['numpkgs'] -
-                                      self.repos[repo_id]['dlpkgs'])
-            self.repos[repo_id]['dlpkgs'] = self.repos[repo_id]['numpkgs']
         if repo_metadata:
             self.repos[repo_id]['repomd'] = repo_metadata
         if repo_error:
@@ -312,3 +308,7 @@ class ProgressCallback(object):
     def repo_error(self, repo_id, error):
         """ Called when a repository throws an exception. """
         self.send(repo_id, 'repo_error', error)
+
+    def local_pkg_exists(self, repo_id, pkgname):
+        """ Called when a download will be skipped because it already exists """
+        self.send(repo_id, 'local_pkg_exists', pkgname)

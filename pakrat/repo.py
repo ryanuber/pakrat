@@ -130,18 +130,26 @@ def sync(repo, dest, version, delete=False, yumcallback=None,
         with suppress():
             # showdups allows us to get multiple versions of the same package.
             ygh = yb.doPackageLists(showdups=True)
-        packages = ygh.available + ygh.reinstall_available
-    except (KeyboardInterrupt, SystemExit), e:
-        raise e
-    except Exception, e:
-        callback(repocallback, repo, 'repo_error', str(e))
-        log.error(str(e))
-        return False
 
-    callback(repocallback, repo, 'repo_init', len(packages))  # total repo pkgs
-    try:
+        # reinstall_available = Available packages which are installed.
+        packages = ygh.available + ygh.reinstall_available
+
+        # Inform about number of packages total in the repo.
+        callback(repocallback, repo, 'repo_init', len(packages))
+
+        # Check if the packages are already downloaded. This is probably a bit
+        # expensive, but the alternative is simply not knowing, which is
+        # horrible for progress indication.
+        for po in packages:
+            local = po.localPkg()
+            if os.path.exists(local):
+                if yb.verifyPkg(local, po, False):
+                    callback(repocallback, repo, 'local_pkg_exists',
+                             util.get_package_filename(po))
+
         with suppress():
             yb.downloadPkgs(packages)
+
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception, e:

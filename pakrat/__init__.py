@@ -104,12 +104,14 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
                 prog.update(e['repo_id'], set_total=e['value'])
             elif e['action'] == 'download_end' and e.has_key('value'):
                 prog.update(e['repo_id'], pkgs_downloaded=e['value'])
-            elif e['action'] == 'repo_complete':
-                prog.update(e['repo_id'], repo_complete=True)
             elif e['action'] == 'repo_metadata':
                 prog.update(e['repo_id'], repo_metadata=e['value'])
+            elif e['action'] == 'repo_complete':
+                pass  # should already know this, but handle it anyways.
             elif e['action'] == 'repo_error':
                 prog.update(e['repo_id'], repo_error=e['value'])
+            elif e['action'] == 'local_pkg_exists':
+                prog.update(e['repo_id'], pkgs_downloaded=1)
         for p in processes:
             if not p.is_alive():
                 processes.remove(p)

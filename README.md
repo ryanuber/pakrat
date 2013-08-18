@@ -179,6 +179,9 @@ repo_complete(repo_id)
 """ Called whenever an exception is thrown from a repo thread """
 repo_error(repo_id, error)
 
+""" Called when a package becomes known as 'already downloaded' """
+local_pkg_exists(repo_id, pkgname)
+
 """ Called when a file begins downloading (non-exclusive) """
 download_start(repo_id, fpath, url, fname, fsize, text)
 
@@ -263,11 +266,13 @@ rpmbuild -tb pakrat.tar.gz
 What's missing
 --------------
 
+* Unit tests (preliminary work done in unit_test branch, but I suck at mocking
+  modules. Pretty please finish it for me? :P )
 * Optional "all" repository containing all known versions
 * Combined repositories?
 
 Thanks
 ------
 
-Thanks to [Keith Chambers](https://github.com/keithchambers) for help with the ideas
-and useful input on CLI design.
+Thanks to [Keith Chambers](https://github.com/keithchambers) for help with the
+ideas and useful input on CLI design.
