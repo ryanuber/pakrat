@@ -23,8 +23,12 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
+import sys
+import tempfile
+import shutil
 import yum
 import createrepo
+from contextlib import contextmanager
 from pakrat import util, log
 
 def factory(name, baseurls=None, mirrorlist=None):
@@ -32,8 +36,8 @@ def factory(name, baseurls=None, mirrorlist=None):
 
     This makes it possible to mirror YUM repositories without having any stored
     configuration anywhere. Simply pass in the name of the repository, and
-    either one or more baseurl's or a mirrorlist URL, and you will get an object
-    in return that you can pass to a mirroring function.
+    either one or more baseurl's or a mirrorlist URL, and you will get an
+    object in return that you can pass to a mirroring function.
     """
     yb = util.get_yum()
     if baseurls is not None:
@@ -43,7 +47,7 @@ def factory(name, baseurls=None, mirrorlist=None):
         util.validate_mirrorlist(mirrorlist)
         repo = yb.add_enable_repo(name, mirrorlist=mirrorlist)
     else:
-        raise Exception('One or more baseurls or a mirrorlist must be provided')
+        raise Exception('One or more baseurls or mirrorlist required')
     return repo
 
 def set_path(repo, path):
@@ -53,8 +57,9 @@ def set_path(repo, path):
     # exception from YUM's yumRepo.py, line 530 and 557.
     try: repo.pkgdir = path
     except yum.Errors.RepoError: pass
+    return repo
 
-def create_metadata(repo, packages=None):
+def create_metadata(repo, packages=None, comps=None):
     """ Generate YUM metadata for a repository.
 
     This method accepts a repository object and, based on its configuration,
@@ -66,12 +71,23 @@ def create_metadata(repo, packages=None):
     conf.outputdir = os.path.dirname(repo.pkgdir)
     conf.pkglist = packages
     conf.quiet = True
+
+    if comps:
+        groupdir = tempfile.mkdtemp()
+        conf.groupfile = os.path.join(groupdir, 'groups.xml')
+        with open(conf.groupfile, 'w') as f:
+            f.write(comps)
+
     generator = createrepo.SplitMetaDataGenerator(conf)
     generator.doPkgMetadata()
     generator.doRepoMetadata()
     generator.doFinalMove()
 
-def sync(repo, dest, version=None, delete=False):
+    if comps and os.path.exists(groupdir):
+        shutil.rmtree(groupdir)
+
+def sync(repo, dest, version, delete=False, yumcallback=None,
+         repocallback=None):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -80,28 +96,68 @@ def sync(repo, dest, version=None, delete=False):
     which are not present in the remote repository will be deleted.
     """
     util.make_dir(util.get_packages_dir(dest))  # Make package storage dir
+
+    @contextmanager
+    def suppress():
+        """ Suppress stdout within a context.
+
+        This is necessary in this use case because, unfortunately, the YUM
+        library will do direct printing to stdout in many error conditions.
+        Since we are maintaining a real-time, in-place updating presentation
+        of progress, we must suppress this, as we receive exceptions for our
+        reporting purposes anyways.
+        """
+        stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        yield
+        sys.stdout = stdout
+
     if version:
         dest_dir = util.get_versioned_dir(dest, version)
+        util.make_dir(dest_dir)
         packages_dir = util.get_packages_dir(dest_dir)
-    	util.symlink(packages_dir, util.get_relative_packages_dir())
+        util.symlink(packages_dir, util.get_relative_packages_dir())
     else:
         dest_dir = dest
         packages_dir = util.get_packages_dir(dest_dir)
     try:
-        util.make_dir(dest_dir)
         yb = util.get_yum()
-        set_path(repo, packages_dir)
+        repo = set_path(repo, packages_dir)
+        if yumcallback:
+            repo.setCallback(yumcallback)
         yb.repos.add(repo)
         yb.repos.enableRepo(repo.id)
-        # showdups allows us to get multiple versions of the same package.
-        ygh = yb.doPackageLists(showdups=True)
+        with suppress():
+            # showdups allows us to get multiple versions of the same package.
+            ygh = yb.doPackageLists(showdups=True)
+
+        # reinstall_available = Available packages which are installed.
         packages = ygh.available + ygh.reinstall_available
-    except yum.Errors.RepoError, e:
-        log.error(e)
+
+        # Inform about number of packages total in the repo.
+        callback(repocallback, repo, 'repo_init', len(packages))
+
+        # Check if the packages are already downloaded. This is probably a bit
+        # expensive, but the alternative is simply not knowing, which is
+        # horrible for progress indication.
+        for po in packages:
+            local = po.localPkg()
+            if os.path.exists(local):
+                if yb.verifyPkg(local, po, False):
+                    callback(repocallback, repo, 'local_pkg_exists',
+                             util.get_package_filename(po))
+
+        with suppress():
+            yb.downloadPkgs(packages)
+
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    except Exception, e:
+        callback(repocallback, repo, 'repo_error', str(e))
+        log.error(str(e))
         return False
-    log.info('Downloading %d packages from repository %s' % (len(packages),
-             repo.id))
-    yb.downloadPkgs(packages)
+    callback(repocallback, repo, 'repo_complete')
+
     if delete:
         package_names = []
         for package in packages:
@@ -112,14 +168,42 @@ def sync(repo, dest, version=None, delete=False):
                 log.debug('Deleting file %s' % package_path)
                 os.remove(package_path)
     log.info('Finished downloading packages from repository %s' % repo.id)
+
+    comps = None
+    if repo.enablegroups:
+        try:
+            comps = yb._getGroups().xml()
+            log.info('Group data retrieved for repository %s' % repo.id)
+        except yum.Errors.GroupsError:
+            log.debug('No group data available for repository %s' % repo.id)
+            pass
+
     log.info('Creating metadata for repository %s' % repo.id)
     pkglist = []
     for pkg in packages:
         pkglist.append(
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
-    create_metadata(repo, pkglist)
+
+    # createrepo enclosed in callbacks so we know when it starts and ends
+    callback(repocallback, repo, 'repo_metadata', 'working')
+    create_metadata(repo, pkglist, comps)
+    callback(repocallback, repo, 'repo_metadata', 'complete')
+
     log.info('Finished creating metadata for repository %s' % repo.id)
     if version:
         latest_symlink = util.get_latest_symlink_path(dest)
         util.symlink(latest_symlink, version)
+
+def callback(callback_obj, repo, event, data=None):
+    """ Abstracts calling class callbacks.
+
+    Since callbacks are optional, a function should check if the callback is
+    set or not, and then call it, so we don't repeat this code many times.
+    """
+    if callback_obj and hasattr(callback_obj, event):
+        method = getattr(callback_obj, event)
+        if data:
+            method(repo.id, data)
+        else:
+            method(repo.id)

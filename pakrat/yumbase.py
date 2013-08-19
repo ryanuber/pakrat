@@ -22,37 +22,24 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
-from setuptools import setup
+import yum
 
-def required_module(module):
-    """ Test for the presence of a given module.
+""" YumBase object specifically for pakrat.
 
-    This function attempts to load a module, and if it fails to load, a message
-    is displayed and installation is aborted. This is required because YUM and
-    createrepo are not compatible with setuptools, and pakrat cannot function
-    without either one of them.
-    """
-    try:
-        __import__(module)
-        return True
-    except:
-        print '\n'.join([
-            'The "%s" module is required, but was not found.' % module,
-            'Please install the module and try again.'
-        ])
-        sys.exit(1)
+This class is a simple extension of the yum.YumBase class. It is required
+because pakrat uses YUM in an atypical way. When we load a YUM object, we want
+only the scaffolding, and none of the system repositories or other inherited
+configuration. This sounds easy but is not really built-in to YUM. This method
+also uses the YUM client library to create its own cachedir on instantiation.
+"""
+class YumBase(yum.YumBase):
 
-required_module('yum')
-required_module('createrepo')
-
-setup(name='pakrat',
-    version='0.3.1',
-    description='A Python library for mirroring and versioning YUM repositories',
-    author='Ryan Uber',
-    author_email='ru@ryanuber.com',
-    url='https://github.com/ryanuber/pakrat',
-    packages=['pakrat'],
-    scripts=['bin/pakrat'],
-    package_data={'pakrat': ['LICENSE', 'README.md']}
-)
+    def __init__(self):
+        """ Create a new YumBase object for use in pakrat. """
+        yum.YumBase.__init__(self)
+        self.preconf = yum._YumPreBaseConf()
+        self.preconf.debuglevel = 0
+        self.prerepoconf = yum._YumPreRepoConf()
+        self.setCacheDir(force=True, reuse=False,
+                         tmpdir=yum.misc.getCacheDir())
+        self.repos.repos = {}

@@ -35,15 +35,20 @@ parser = OptionParser(version='pakrat %s' % pakrat.__version__,
         'url. The "--name" and "--url" options may be repeated',
         'to declare multiple repositories. Repository names and',
         'URLs are matched up according to their position on the',
-        'command line.'
+        'command line.',
+        '',
+        'The exit code will be one of:',
+        '   0: All repos successfully synced',
+        '   1: All repos failed to sync',
+        '   2: Some repos failed to sync, others succeeded.'
     ]))
 parser.add_option('--repoversion', default=None,
     help=('The version of the repository to create. By default, the '
 	  'repositories will not be versioned.'))
 parser.add_option('--name', action='append',
     help='The name of a YUM repository. (repeatable)') 
-parser.add_option('--url', action='append',
-    help='The source URL to a repository (repeatable)')
+parser.add_option('--baseurl', action='append',
+    help='The baseurl of a repository (repeatable)')
 parser.add_option('--outdir', type='string', default=os.getcwd(),
     help='The root output directory to store repository data. Default '
          'is the current working directory.')
@@ -61,19 +66,18 @@ options, args = parser.parse_args()
 
 repos = []
 
-if options.name and options.url:
-    if len(options.name) != len(options.url):
+if options.name and options.baseurl:
+    if len(options.name) != len(options.baseurl):
         print 'Each repository must have a name and URL.'
         sys.exit(1)
-    for repo in zip(options.name, options.url):
-        name, url = repo
-        repos.append(pakrat.repo.factory(name=name, baseurls=[url]))
+    for name, baseurl in zip(options.name, options.baseurl):
+        repos.append(pakrat.repo.factory(name=name, baseurls=[baseurl]))
 
 if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
     parser.print_help()
     sys.exit(1)
 
-pakrat.sync(
+numrepos, numfails, elapsed = pakrat.sync(
     basedir=options.outdir,
     repoversion=options.repoversion,
     objrepos=repos,
@@ -81,3 +85,12 @@ pakrat.sync(
     repodirs=options.repodir,
     delete=options.delete
 )
+
+print 'Finished in %s' % elapsed
+
+if numfails == 0:
+    sys.exit(0)
+elif numrepos == numfails:
+    sys.exit(1)
+else:
+    sys.exit(2)
