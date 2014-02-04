@@ -1,6 +1,3 @@
-# pakrat - A tool for mirroring and versioning YUM repositories.
-# Copyright 2013 Ryan Uber <ru@ryanuber.com>. All rights reserved.
-
 import os
 import sys
 import multiprocessing
