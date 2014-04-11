@@ -7,7 +7,7 @@ from pakrat import util, log, repo, repos, progress
 
 __version__ = '0.3.2'
 
-def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
+def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[], sumtype='sha1',
          repoversion=None, delete=False, combined=False, callback=None):
     """ Mirror repositories with configuration data from multiple sources.
 
@@ -18,6 +18,8 @@ def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[],
     util.validate_repos(objrepos)
     util.validate_repofiles(repofiles)
     util.validate_repodirs(repodirs)
+    if sumtype is not None:
+        util.validate_sumtype(sumtype)
 
     if not basedir:
         basedir = os.getcwd()  # default current working directory

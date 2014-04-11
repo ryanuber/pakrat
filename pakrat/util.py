@@ -137,6 +137,13 @@ def validate_repodirs(repodirs):
     for repodir in repodirs:
         validate_repodir(repodir)
 
+def validate_sumtype(sumtype):
+    """ Validate a checksum type used during createrepo """
+    if type(sumtype) is not str:
+        raise Exception('sumtype must be a string, not "%s"' % type(sumtype))
+    if not sumtype in ['sha1', 'sha256']:
+        raise Exception('sumtype "%s" not recognized' % sumtype)
+
 def make_dir(dir):
     """ Create a directory recursively, if it does not exist. """
     if not os.path.exists(dir):

@@ -29,6 +29,8 @@ parser.add_option('--baseurl', action='append',
 parser.add_option('--outdir', type='string', default=os.getcwd(),
     help='The root output directory to store repository data. Default is the '
          'current working directory.')
+parser.add_option('--sumtype', type='string',
+    help='The checksum type used for createrepo')
 parser.add_option('--repofile', default=[], action='append',
     help=('The path to a YUM repository configuration file. (repeatable)'))
 parser.add_option('--repodir', default=[], action='append',
@@ -68,10 +70,12 @@ try:
         objrepos=repos,
         repofiles=options.repofile,
         repodirs=options.repodir,
+        sumtype=options.sumtype,
         delete=options.delete,
         combined=options.combined
     )
-except:
+except Exception, e:
+    print 'Error: %s' % e
     sys.exit(1)
 
 print 'Finished in %s' % elapsed

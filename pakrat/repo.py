@@ -39,16 +39,18 @@ def set_path(repo, path):
 
     return result
 
-def create_metadata(repo, packages=None, comps=None):
+def create_metadata(repo, sumtype, packages=None, comps=None):
     """ Generate YUM metadata for a repository.
 
     This method accepts a repository object and, based on its configuration,
     generates YUM metadata for it using the createrepo sister library.
     """
     util.validate_repo(repo)
+    util.validate_sumtype(sumtype)
     conf = createrepo.MetaDataConfig()
     conf.directory = os.path.dirname(repo.pkgdir)
     conf.outputdir = os.path.dirname(repo.pkgdir)
+    conf.sumtype = sumtype
     if packages:
         conf.pkglist = packages
     conf.quiet = True
@@ -67,14 +69,14 @@ def create_metadata(repo, packages=None, comps=None):
     if comps and os.path.exists(groupdir):
         shutil.rmtree(groupdir)
 
-def create_combined_metadata(repo, dest, comps=None):
+def create_combined_metadata(repo, sumtype, dest, comps=None):
     """ Creates YUM metadata for the entire Packages directory.
 
     When used with versioning, this creates a combined repository of all
     packages ever synced for the repository.
     """
     combined_repo = set_path(repo, util.get_packages_dir(dest))
-    create_metadata(combined_repo, None, comps)
+    create_metadata(combined_repo, sumtype, None, comps)
 
 def retrieve_group_comps(repo):
     """ Retrieve group comps XML data from a remote repository.
@@ -93,8 +95,8 @@ def retrieve_group_comps(repo):
             log.debug('No group data available for repository %s' % repo.id)
             return None
 
-def sync(repo, dest, version, delete=False, combined=False, yumcallback=None,
-         repocallback=None):
+def sync(repo, dest, version, delete=False, sumtype='sha1', combined=False,
+         yumcallback=None, repocallback=None):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses
@@ -185,9 +187,9 @@ def sync(repo, dest, version, delete=False, combined=False, yumcallback=None,
             util.get_package_relativedir(util.get_package_filename(pkg))
         )
 
-    create_metadata(repo, pkglist, comps)
+    create_metadata(repo, sumtype, pkglist, comps)
     if combined and version:
-        create_combined_metadata(repo, dest, comps)
+        create_combined_metadata(repo, sumtype, dest, comps)
     elif os.path.exists(util.get_metadata_dir(dest)):
         # At this point the combined metadata is stale, so remove it.
         log.debug('Removing combined metadata for repository %s' % repo.id)
