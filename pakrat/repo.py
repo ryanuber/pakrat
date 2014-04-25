@@ -95,8 +95,8 @@ def retrieve_group_comps(repo):
             log.debug('No group data available for repository %s' % repo.id)
             return None
 
-def sync(repo, dest, version, delete=False, sumtype='sha1', combined=False,
-         yumcallback=None, repocallback=None):
+def sync(repo, dest, version, delete=False, combined=False, yumcallback=None,
+    repocallback=None, sumtype='sha1'):
     """ Sync repository contents from a remote source.
 
     Accepts a repository, destination path, and an optional version, and uses

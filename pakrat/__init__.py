@@ -7,8 +7,8 @@ from pakrat import util, log, repo, repos, progress
 
 __version__ = '0.3.2'
 
-def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[], sumtype='sha1',
-         repoversion=None, delete=False, combined=False, callback=None):
+def sync(basedir=None, objrepos=[], repodirs=[], repofiles=[], repoversion=None,
+         delete=False, combined=False, callback=None, sumtype='sha1'):
     """ Mirror repositories with configuration data from multiple sources.
 
     Handles all input validation and higher-level logic before passing control
