@@ -207,14 +207,15 @@ class YumProgress(object):
             try: method(self.repo_id, *args)
             except: pass
 
-    def start(self, _file, url, basename, size, text):
+    def start(self, filename=None, url=None, basename=None, size=None, text=None):
         """ Called by urlgrabber when a file download starts.
 
         All we use this for is storing the name of the file being downloaded so
         we can check that it is an RPM later on.
         """
-        self.package = basename
-        self.callback('download_start', _file, url, basename, size, text)
+        if basename:
+            self.package = basename
+            self.callback('download_start', filename, url, basename, size, text)
 
     def update(self, size):
         """ Called during the course of a download.
