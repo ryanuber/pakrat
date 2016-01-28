@@ -8,7 +8,7 @@ release: 1%{?dist}
 buildarch: noarch
 license: MIT
 source0: %{name}.tar.gz
-buildrequires: yum, createrepo, python-setuptools-devel
+buildrequires: yum, createrepo, python-setuptools
 requires: yum, createrepo
 
 %description
